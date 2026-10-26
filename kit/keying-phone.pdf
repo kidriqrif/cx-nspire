@@ -1,0 +1,185 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Length 3289 >>
+stream
+BT /F2 17 Tf 48 794 Td (IB AA HL Solver - keying-in guide) Tj ET
+BT /F1 9 Tf 48 778 Td (KhiCAS on TI-Nspire CX. Jump code = type on the main menu, e.g. 511.) Tj ET
+BT /F2 13 Tf 48 754 Td (Keys) Tj ET
+0.3 G 0.7 w 48 748 m 547 748 l S
+BT /F3 10 Tf 48 732 Td (x^2) Tj ET
+BT /F1 9.5 Tf 198 732 Td ([x²]  \(shows **2, fine\)) Tj ET
+BT /F3 10 Tf 48 717 Td (^  any power) Tj ET
+BT /F1 9.5 Tf 198 717 Td ([^]) Tj ET
+BT /F3 10 Tf 48 702 Td (sqrt\() Tj ET
+BT /F1 9.5 Tf 198 702 Td ([ctrl] [x²]) Tj ET
+BT /F3 10 Tf 48 687 Td (e^\(   \(exp\)) Tj ET
+BT /F1 9.5 Tf 198 687 Td ([e^x]  types exp\(  close with \)) Tj ET
+BT /F3 10 Tf 48 672 Td (ln\() Tj ET
+BT /F1 9.5 Tf 198 672 Td ([ctrl] [e^x]) Tj ET
+BT /F3 10 Tf 48 657 Td (log\(  base 10) Tj ET
+BT /F1 9.5 Tf 198 657 Td ([ctrl] [10^x]  types log10\() Tj ET
+BT /F3 10 Tf 48 642 Td (sin\(  cos\(  tan\() Tj ET
+BT /F1 9.5 Tf 198 642 Td ([trig]  [shift][trig]  [ctrl][trig]) Tj ET
+BT /F3 10 Tf 48 627 Td (pi) Tj ET
+BT /F1 9.5 Tf 198 627 Td ([pi] key) Tj ET
+BT /F3 10 Tf 48 612 Td (|  modulus) Tj ET
+BT /F1 9.5 Tf 198 612 Td ([shift] [=]) Tj ET
+BT /F3 10 Tf 48 597 Td (i  complex) Tj ET
+BT /F1 9.5 Tf 198 597 Td (letter i) Tj ET
+BT /F3 10 Tf 48 582 Td ("  quote) Tj ET
+BT /F1 9.5 Tf 198 582 Td ([ctrl] [×]) Tj ET
+BT /F3 10 Tf 48 567 Td (<   >) Tj ET
+BT /F1 9.5 Tf 198 567 Td ([ctrl][-]   [shift][+]) Tj ET
+BT /F3 10 Tf 48 552 Td (_  \(log_3\)) Tj ET
+BT /F1 9.5 Tf 198 552 Td ([shift] [-]) Tj ET
+BT /F3 10 Tf 48 537 Td (negative) Tj ET
+BT /F1 9.5 Tf 198 537 Td ([\(-\)] or [-]) Tj ET
+BT /F2 13 Tf 48 508 Td (Examples) Tj ET
+0.3 G 0.7 w 48 502 m 547 502 l S
+0.94 g 42 443 511 50 re f 0 g
+BT /F2 10 Tf 48 471 Td (Polynomial) Tj ET
+BT /F2 11 Tf 526 471 Td (511) Tj ET
+BT /F3 11 Tf 56 458 Td (-2x^4+3x^3-x/2+7) Tj ET
+BT /F1 9 Tf 56 445 Td (leading minus: [\(-\)]) Tj ET
+BT /F2 10 Tf 48 420 Td (Rational) Tj ET
+BT /F2 11 Tf 526 420 Td (511) Tj ET
+BT /F3 11 Tf 56 407 Td (\(2x^2-3x+1\)/\(\(x-1\)\(x+2\)^2\)) Tj ET
+BT /F1 9 Tf 56 394 Td (bracket the whole top and bottom) Tj ET
+0.94 g 42 341 511 50 re f 0 g
+BT /F2 10 Tf 48 369 Td (Root / power) Tj ET
+BT /F2 11 Tf 526 369 Td (511) Tj ET
+BT /F3 11 Tf 56 356 Td (x^2sqrt\(4-x^2\)+\(x^2+1\)^\(1/3\)) Tj ET
+BT /F1 9 Tf 56 343 Td (cube root = ^\(1/3\)) Tj ET
+BT /F2 10 Tf 48 318 Td (Exponential) Tj ET
+BT /F2 11 Tf 526 318 Td (511) Tj ET
+BT /F3 11 Tf 56 305 Td (3e^\(-2x+1\)-2^\(x+1\)+e^-x) Tj ET
+BT /F1 9 Tf 56 292 Td (e^\( = [e^x]; e^-x needs no brackets) Tj ET
+0.94 g 42 239 511 50 re f 0 g
+BT /F2 10 Tf 48 267 Td (Logarithm) Tj ET
+BT /F2 11 Tf 526 267 Td (511) Tj ET
+BT /F3 11 Tf 56 254 Td (ln\(x^2+1\)-2log\(x\)+ln\(x\)/ln\(3\)) Tj ET
+BT /F1 9 Tf 56 241 Td (log=base 10; log3\(x\): ln\(x\)/ln\(3\)) Tj ET
+BT /F2 10 Tf 48 216 Td (Log equation) Tj ET
+BT /F2 11 Tf 526 216 Td (121) Tj ET
+BT /F3 11 Tf 56 203 Td (log_3\(x\)+log_3\(x-8\)=2) Tj ET
+BT /F1 9 Tf 56 190 Td (log_b\( only in this solver) Tj ET
+0.94 g 42 137 511 50 re f 0 g
+BT /F2 10 Tf 48 165 Td (Trig) Tj ET
+BT /F2 11 Tf 526 165 Td (511) Tj ET
+BT /F3 11 Tf 56 152 Td (3sin\(2x-pi/3\)^2+cos\(x/2\)) Tj ET
+BT /F1 9 Tf 56 139 Td (sin^2\(u\): type sin\(u\)^2; theta: t) Tj ET
+BT /F2 10 Tf 48 114 Td (Trig equation) Tj ET
+BT /F2 11 Tf 526 114 Td (331) Tj ET
+BT /F3 11 Tf 56 101 Td (2sin\(2x-pi/3\)=1) Tj ET
+BT /F1 9 Tf 56 88 Td (then d/r and the interval) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 9 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 2889 >>
+stream
+0.94 g 42 751 511 50 re f 0 g
+BT /F2 10 Tf 48 779 Td (Reciprocal trig) Tj ET
+BT /F2 11 Tf 526 779 Td (511) Tj ET
+BT /F3 11 Tf 56 766 Td (sec\(x\)^2-cosec\(2x\)+cot\(x\)) Tj ET
+BT /F1 9 Tf 56 753 Td (type the letters; csc also ok) Tj ET
+BT /F2 10 Tf 48 728 Td (Inverse trig) Tj ET
+BT /F2 11 Tf 526 728 Td (511) Tj ET
+BT /F3 11 Tf 56 715 Td (arcsin\(x/2\)+arctan\(3x^2\)) Tj ET
+BT /F1 9 Tf 56 702 Td (asin\( acos\( atan\( also ok) Tj ET
+0.94 g 42 649 511 50 re f 0 g
+BT /F2 10 Tf 48 677 Td (Modulus) Tj ET
+BT /F2 11 Tf 526 677 Td (232) Tj ET
+BT /F3 11 Tf 56 664 Td (|2x-3|=|x+1|) Tj ET
+BT /F1 9 Tf 56 651 Td (| = [shift][=]; nested: abs\(abs\(x\)-1\)) Tj ET
+BT /F2 10 Tf 48 626 Td (Composite) Tj ET
+BT /F2 11 Tf 526 626 Td (511) Tj ET
+BT /F3 11 Tf 56 613 Td (ln\(sqrt\(1+e^\(2x\)\)\)) Tj ET
+BT /F1 9 Tf 56 600 Td (close every bracket) Tj ET
+0.94 g 42 547 511 50 re f 0 g
+BT /F2 10 Tf 48 575 Td (Product/quot.) Tj ET
+BT /F2 11 Tf 526 575 Td (511) Tj ET
+BT /F3 11 Tf 56 562 Td (x^3e^\(-x^2\)/\(1+x\)) Tj ET
+BT /F1 9 Tf 56 549 Td (no * needed: 2x\(x+1\), x^2y) Tj ET
+BT /F2 10 Tf 48 524 Td (Implicit x,y) Tj ET
+BT /F2 11 Tf 526 524 Td (514) Tj ET
+BT /F3 11 Tf 56 511 Td (x^2y+y^3=2x+1) Tj ET
+BT /F1 9 Tf 56 498 Td (then the point: \(1,1\)) Tj ET
+0.94 g 42 445 511 50 re f 0 g
+BT /F2 10 Tf 48 473 Td (Diff. eqn) Tj ET
+BT /F2 11 Tf 526 473 Td (573) Tj ET
+BT /F3 11 Tf 56 460 Td (\(x^2+y^2\)/\(xy\)) Tj ET
+BT /F1 9 Tf 56 447 Td (type only the right side of dy/dx =) Tj ET
+BT /F2 10 Tf 48 422 Td (Complex) Tj ET
+BT /F2 11 Tf 526 422 Td (132) Tj ET
+BT /F3 11 Tf 56 409 Td (1+sqrt\(3\)i) Tj ET
+BT /F1 9 Tf 56 396 Td (then n = 5 for z^5 \(De Moivre\)) Tj ET
+BT /F2 13 Tf 48 374 Td (Pitfalls) Tj ET
+0.3 G 0.7 w 48 368 m 547 368 l S
+BT /F2 9.5 Tf 48 352 Td (Don't type) Tj ET
+BT /F2 9.5 Tf 198 352 Td (because) Tj ET
+BT /F2 9.5 Tf 378 352 Td (type instead) Tj ET
+0.6 G 0.7 w 48 348 m 547 348 l S
+BT /F3 10 Tf 48 333 Td (sinx^2) Tj ET
+BT /F1 9.5 Tf 198 333 Td (means sin\(x^2\)) Tj ET
+BT /F3 10 Tf 378 333 Td (sin\(x\)^2) Tj ET
+BT /F3 10 Tf 48 318 Td (sin^2\(x\)) Tj ET
+BT /F1 9.5 Tf 198 318 Td (error) Tj ET
+BT /F3 10 Tf 378 318 Td (sin\(x\)^2) Tj ET
+BT /F3 10 Tf 48 303 Td (1/2x) Tj ET
+BT /F1 9.5 Tf 198 303 Td (means x/2) Tj ET
+BT /F3 10 Tf 378 303 Td (1/\(2x\)) Tj ET
+BT /F3 10 Tf 48 288 Td (theta) Tj ET
+BT /F1 9.5 Tf 198 288 Td (becomes t*h*e*t*a) Tj ET
+BT /F3 10 Tf 378 288 Td (t) Tj ET
+BT /F3 10 Tf 48 273 Td (f\(x\)=x^2) Tj ET
+BT /F1 9.5 Tf 198 273 Td (f\(x\) breaks it) Tj ET
+BT /F3 10 Tf 378 273 Td (x^2) Tj ET
+BT /F3 10 Tf 48 258 Td (||x|-1|) Tj ET
+BT /F1 9.5 Tf 198 258 Td (error) Tj ET
+BT /F3 10 Tf 378 258 Td (abs\(abs\(x\)-1\)) Tj ET
+BT /F3 10 Tf 48 243 Td (inf, oo) Tj ET
+BT /F1 9.5 Tf 198 243 Td (not supported) Tj ET
+BT /F3 10 Tf 378 243 Td (-) Tj ET
+BT /F3 10 Tf 48 228 Td (log\(x\)) Tj ET
+BT /F1 9.5 Tf 198 228 Td (is base 10) Tj ET
+BT /F3 10 Tf 378 228 Td (ln\(x\) for base e) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 9 0 R /MediaBox [0 0 595 842] /Contents 6 0 R /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 9 0 R >>
+endobj
+9 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000303 00000 n 
+0000003644 00000 n 
+0000003790 00000 n 
+0000006731 00000 n 
+0000006877 00000 n 
+0000006926 00000 n 
+trailer
+<< /Size 10 /Root 8 0 R >>
+startxref
+6989
+%%EOF

@@ -1,0 +1,470 @@
+# ibdist.py - binomial and normal distributions (AA 4.8, 4.9, 4.12)
+from ibcore import *
+
+TITLE = 'Distributions'
+_M = {'d': 1}
+
+
+def _q(s):
+    # decimal literals -> exact fractions: 0.35 -> (35/100)
+    o = ''
+    i = 0
+    n = len(s)
+    while i < n:
+        j = i
+        while j < n and (s[j] in DIG or s[j] == '.'):
+            j += 1
+        if j == i:
+            o += s[i]
+            i += 1
+            continue
+        t = s[i:j]
+        if '.' in t and (i == 0 or s[i - 1] not in LET):
+            a = t.split('.')
+            t = '(' + str(int(a[0] + a[1] or '0')) + '/1' + '0' * len(a[1]) + ')'
+        o += t
+        i = j
+    return o
+
+
+def _e(s):
+    if '.' in s:
+        _M['d'] = 1
+    return S(_q(s)) if s else ''
+
+
+def _s3(v):
+    # 3 s.f. without the 0.9996 -> 1.000 overflow of sf3
+    return sf3(float('%.2e' % v))
+
+
+def _f(r):
+    # display value: exact, decimal if it terminates (dec mode), + 3 s.f.
+    r = str(r)
+    s = pp(r)
+    v = F(r)
+    if v is None or has_var(r):
+        return s
+    t = _s3(v)
+    if '.' in r:
+        return t
+    if isnum(r):
+        if '/' not in r:
+            return s
+        q = int(r.split('/')[1])
+        for k in range(80):
+            if q % 2 == 0:
+                q //= 2
+            elif q % 5 == 0:
+                q //= 5
+        if q == 1 and _M['d']:
+            d = G('evalf(' + r + ')')
+            return d if len(d) < 10 and 'e' not in d else t
+    return s + ' (' + t + ')' if len(s) < 18 else t
+
+
+def _g(r):
+    return _f(r).split(' (')[0]
+
+
+def _c(r):
+    # exact if rational, otherwise 3 s.f. only (no surd/power soup)
+    return _f(r) if isnum(_g(r)) else _s3(F(r))
+
+
+def _A(lbl, r, c=0):
+    out('ANS: ' + lbl + ' = ' + (_c(r) if c else _f(r)))
+
+
+def _pw(b, k):
+    # b^k as a student writes it: nothing for k = 0, b for k = 1
+    return '' if k == 0 else (b if k == 1 else b + '^' + str(k))
+
+
+def _w(s):
+    return s if isnum(s) and '/' not in s else '(' + s + ')'
+
+
+def _z4(v):
+    return _t(v if abs(v) > 5e-5 else 0.0)
+
+
+def _t(v):
+    return ('%.4f' % v).rstrip('0').rstrip('.')
+
+
+def _inv(p):
+    # inverse normal (standard), full precision float
+    r = Gs('normald_icdf(0,1,' + p + ')')
+    if not r:
+        r = G('fsolve(erf(z/sqrt(2))=2*(' + p + ')-1,z=0)')
+    return float(r)
+
+
+# ---------- binomial ----------
+def _cd(B, k, lb):
+    # exact P(X<=k) -> [value, working printed?]; k <= 2 is expanded under the label lb
+    n, p, q = B
+    if k < 0:
+        return ['0', 0]
+    if k >= int(n):
+        return ['1', 0]
+    w = 0
+    if k <= 2:
+        w = 1
+        out(lb + ' = ' + ' + '.join(['P(X=' + str(j) + ')' for j in range(k + 1)]))
+        if k:
+            out('  = ' + ' + '.join([_g(S('comb(' + n + ',' + str(j) + ')*(' + p + ')^' + str(j) + '*(' + q + ')^(' + n + '-' + str(j) + ')')) for j in range(k + 1)]))
+    return [G('binomial_cdf(' + n + ',' + p + ',' + str(k) + ')'), w]
+
+
+def _cm(w, lb, o):
+    # the line combining the cdf values: a continuation unless working came between
+    out(('  = ' if not w else lb + ' = ') + o)
+
+
+def _binom(n, p, ps):
+    q = S('1-(' + p + ')')
+    B = [n, p, q]
+    qs = _g(q)
+    out('X ~ B(' + n + ', ' + ps + ')')
+    t = ask('1 P(X=r) 2 P(X<=r) 3 P(X<r) 4 P(X>=r) 5 P(X>r) 6 P(a<=X<=b) 7 E,Var', '1', 0)
+    if t == '7':
+        E = S(n + '*(' + p + ')')
+        V = S(n + '*(' + p + ')*(' + q + ')')
+        out('E(X) = np = ' + n + '(' + ps + ') = ' + _f(E))
+        out('Var(X) = np(1-p) = ' + n + '(' + ps + ')(' + qs + ') = ' + _f(V))
+        out('sd = ' + pp('sqrt(' + _g(V) + ')') + ' = ' + _c(S('sqrt(' + V + ')')))
+        _A('E(X)', E)
+        _A('Var(X)', V)
+        return
+    if t == '6':
+        a, b = sorted([int(x) for x in askv('a,b', '', 0)])
+        lb = 'P(' + str(a) + '<=X<=' + str(b) + ')'
+        sb = 'P(X<=' + str(b) + ')'
+        sa = 'P(X<=' + str(a - 1) + ')'
+        if a <= 0:
+            out(lb + ' = ' + sb)
+            v = _cd(B, b, sb)[0]
+        elif b >= int(n):
+            out(lb + ' = 1 - ' + sa)
+            c, w = _cd(B, a - 1, sa)
+            v = S('1-(' + c + ')')
+            _cm(w, lb, '1 - ' + _g(c))
+        else:
+            out(lb + ' = ' + sb + ' - ' + sa)
+            cb, w1 = _cd(B, b, sb)
+            ca, w2 = _cd(B, a - 1, sa)
+            v = S(cb + '-(' + ca + ')')
+            _cm(w1 or w2, lb, _g(cb) + ' - ' + _g(ca))
+        _A(lb, v)
+        return
+    r = int(ask('r', '', 0))
+    if r < 0 or r > int(n):
+        out('Error: need 0<=r<=n')
+        return
+    R = str(r)
+    if t == '1':
+        lb = 'P(X=' + R + ')'
+        v = S('comb(' + n + ',' + R + ')*(' + p + ')^' + R + '*(' + q + ')^(' + n + '-' + R + ')')
+        tl = _pw('(' + ps + ')', r) + _pw('(' + qs + ')', int(n) - r)
+        if 0 < r < int(n):
+            out(lb + ' = C(' + n + ',' + R + ')' + tl)
+            out('  = ' + G('comb(' + n + ',' + R + ')') + tl)
+        else:
+            out(lb + ' = ' + tl)
+    elif t in '23':
+        k = r if t == '2' else r - 1
+        lb = 'P(X' + ('<=' if t == '2' else '<') + R + ')'
+        sk = 'P(X<=' + str(k) + ')'
+        if t == '3' and k > 2:
+            out(lb + ' = ' + sk)
+        v = _cd(B, k, lb if 0 <= k <= 2 else sk)[0]
+    else:
+        k = r - 1 if t == '4' else r
+        lb = 'P(X' + ('>=' if t == '4' else '>') + R + ')'
+        sk = 'P(X<=' + str(k) + ')'
+        if k < 0:
+            c, w = '0', 0
+        else:
+            out(lb + ' = 1 - ' + ('P(X=0)' if k == 0 else sk))
+            c, w = _cd(B, k, sk) if k else [G('binomial_cdf(' + n + ',' + p + ',0)'), 0]
+        v = S('1-(' + c + ')')
+        if k >= 0:
+            _cm(w, lb, '1 - ' + (_g(c) if F(c) < 0.995 or c == '1' else sf3(F(c), 6)))
+    _A(lb, v)
+
+
+def binomial_dist():
+    hdr('Binomial')
+    _M['d'] = 0
+    n = ask('n (blank=least n)', '', 0)
+    pr = ask('p (blank=find p)', '', 0)
+    p = _e(norm(pr))
+    if not n:
+        _least(p, pr)
+    elif not p:
+        _findp(n)
+    elif not (0 < F(p) < 1) or int(n) < 1:
+        out('Error: need n>=1, 0<p<1')
+    else:
+        _binom(n, p, pr)
+    wait()
+
+
+def _least(p, ps):
+    out('X ~ B(n, ' + ps + ')')
+    k = int(ask('k for P(X>=k)', '1', 0))
+    c = _e(askn('P(X>=k) > c, c', '', 0))
+    q = S('1-(' + p + ')')
+    qs = _g(q)
+    pv = F(p)
+    cv = F(c)
+    if not (0 < pv < 1 and 0 < cv < 1 and k >= 1):
+        out('Error: need 0<p<1, 0<c<1')
+        return
+    if k == 1:
+        v = F('ln(1-(' + c + '))/ln(' + q + ')')
+        out('P(X>=1) = 1 - (' + qs + ')^n > ' + _g(c))
+        out('(' + qs + ')^n < ' + _g(S('1-(' + c + ')')))
+        out('n > ln(' + _g(S('1-(' + c + ')')) + ')/ln(' + qs + ')  (ln<0)')
+        out('n > ' + _s3(v))
+        N_ = int(v) + 1
+    else:
+        N_ = 0
+        for m in range(k, 1001):
+            t = (1 - pv) ** m
+            s = 0.0
+            for i in range(k):
+                s += t
+                t = t * (m - i) / (i + 1) * pv / (1 - pv)
+            if 1 - s > cv:
+                N_ = m
+                break
+        if not N_:
+            out('n > 1000')
+            return
+        for m in (N_ - 1, N_):
+            if m >= k:
+                v = F('1-binomial_cdf(' + str(m) + ',' + p + ',' + str(k - 1) + ')')
+                out('n=' + str(m) + ': P(X>=' + str(k) + ') = ' + sf3(v) + (' > ' if m == N_ else ' < ') + _g(c))
+    out('ANS: least n = ' + str(N_))
+
+
+def _findp(n):
+    out('X ~ B(' + n + ', p)')
+    a = askv('r, value of P(X=r)', '', 0)
+    r = a[0]
+    v = _e(a[1])
+    e = 'comb(' + n + ',' + r + ')*p^' + r + '*(1-p)^(' + n + '-' + r + ')'
+    out(('C(' + n + ',' + r + ')' if 0 < int(r) < int(n) else '') + _pw('p', int(r)) + _pw('(1-p)', int(n) - int(r)) + ' = ' + _g(v))
+    rs = GL('solve(' + e + '=' + v + ',p)')
+    if not rs or bad(''.join(rs)):
+        rs = GL('fsolve(' + e + '=' + v + ',p=0..1)')
+    ok = [x for x in rs if 0 < (F(x) or -1) < 1]
+    if not ok:
+        out('No p in (0,1)')
+    for x in ok:
+        t = split_terms(x)
+        if len(t) == 2 and t[0][0] == '-':
+            x = t[1].strip('+') + t[0]
+        _A('p', x, 1)
+
+
+# ---------- normal ----------
+def _ev(a, b):
+    if a and b:
+        return a + '<X<' + b
+    if a:
+        return 'X>' + a
+    return 'X<' + b
+
+
+def _P(mu, s, a, b):
+    return G('evalf(normald_cdf(' + mu + ',' + s + ',' + (a or '-inf') + ',' + (b or 'inf') + '))')
+
+
+def _ab(e):
+    r = [norm(x) for x in split_top(ask('Event ' + e + ': lo,hi (blank=inf)', '', 0).strip('()[] '), ',')]
+    return (r + ['', ''])[:2]
+
+
+def _d(x, m):
+    # x - m, bracketing a negative m
+    return x + ' - ' + (m if m[:1] != '-' else '(' + m + ')')
+
+
+def normal_prob():
+    hdr('Normal prob')
+    _M['d'] = 1
+    mu = _e(askn('mu', '', 0))
+    sg = norm(ask('sigma (or v=variance)', '', 0))
+    if sg[:2] == 'v=':
+        v = sg[2:]
+        s = S('sqrt(' + _e(v) + ')')
+        out('sigma = sqrt(' + v + ') = ' + _f(s))
+    else:
+        s = _e(sg)
+        v = _w(sg) + '^2'
+    if not F(s) > 0:
+        out('Error: sigma>0')
+        wait()
+        return
+    out('X ~ N(' + _g(mu) + ', ' + v + ')')
+    t = ask('1 P(X<b) 2 P(X>a) 3 P(a<X<b) 4 P(X<x)=p 5 P(X>x)=p 6 P(mu-c<X<mu+c)=p 7 P(E|G)', '1', 0)
+    r = ''
+    if t in '123':
+        if t == '3':
+            a, b = [norm(x) for x in askv('a,b', '', 0)]
+        elif t == '1':
+            a = ''
+            b = norm(ask('b', '', 0))
+        else:
+            a = norm(ask('a', '', 0))
+            b = ''
+        zs = []
+        for x in (a, b):
+            if x:
+                z = S('(' + _q(x) + '-(' + mu + '))/(' + s + ')')
+                zt = _g(z)
+                if '/' in zt or 'sqrt' in zt or len(zt) > 7:
+                    zt = _z4(F(z))
+                out('z = (' + _d(x, _g(mu)) + ')/' + _w(_g(s)) + ' = ' + zt)
+                zs.append(zt)
+            else:
+                zs.append('')
+        r = _P(mu, s, _q(a), _q(b))
+        lb = 'P(' + _ev(a, b) + ')'
+        out(lb + ' = P(' + _ev(zs[0], zs[1]).replace('X', 'Z') + ')')
+    elif t in '456':
+        pr = askn('p', '', 0)
+        p = _e(pr)
+        if not 0 < F(p) < 1:
+            out('Error: 0<p<1')
+            wait()
+            return
+        if t == '4':
+            pl = p
+            out('P(X<x) = ' + pr)
+        elif t == '5':
+            pl = S('1-(' + p + ')')
+            out('P(X>x) = ' + pr + ' => P(X<x) = ' + _g(pl))
+        else:
+            pl = S('(1+(' + p + '))/2')
+            out('P(X<mu+c) = (1+' + pr + ')/2 = ' + _g(pl))
+        z = _inv(pl)
+        z = z if abs(z) > 1e-9 else 0.0
+        out('z = invNorm(' + _g(pl) + ') = ' + _z4(z))
+        if t == '6':
+            c = F('(' + str(z) + ')*(' + s + ')')
+            out('c = ' + _z4(z) + '(' + _g(s) + ') = ' + _s3(c))
+            m = F(mu)
+            out(_s3(m - c) + ' < X < ' + _s3(m + c))
+            out('ANS: c = ' + _s3(c))
+        else:
+            out('(' + _d('x', _g(mu)) + ')/' + _g(s) + ' = ' + _z4(z))
+            x = F(mu + '+(' + str(z) + ')*(' + s + ')')
+            t = join_signed([_g(mu)] + ([_z4(z) + '(' + _g(s) + ')'] if z else []))
+            if t != _s3(x):
+                out('x = ' + t)
+            out('ANS: x = ' + _s3(x))
+        wait()
+        return
+    else:
+        e = _ab('E')
+        g = _ab('G')
+        lo = e[0]
+        hi = e[1]
+        if g[0] and (not lo or F(_q(g[0])) > F(_q(lo))):
+            lo = g[0]
+        if g[1] and (not hi or F(_q(g[1])) < F(_q(hi))):
+            hi = g[1]
+        out('P(E|G) = P(E' + ('∩' if CFG['uni'] else 'n') + 'G)/P(G)')
+        if lo and hi and F(_q(lo)) >= F(_q(hi)):
+            num = '0'
+        else:
+            num = _P(mu, s, _q(lo), _q(hi))
+        den = _P(mu, s, _q(g[0]), _q(g[1]))
+        out('  = P(' + (_ev(lo, hi) if num != '0' else 'empty') + ')/P(' + _ev(g[0], g[1]) + ')')
+        r = G('evalf(' + num + '/' + den + ')')
+        out('  = ' + _s3(float(num)) + '/' + _s3(float(den)))
+        lb = 'P(E|G)'
+    out('ANS: ' + lb + ' = ' + _s3(float(r)))
+    n = ask('Use as p in B(n,p)? n (0=no)', '0', 0)
+    if n != '0':
+        _M['d'] = 1
+        _binom(n, r, _s3(float(r)))
+    wait()
+
+
+def normal_unknown():
+    hdr('Normal mu/sigma')
+    t = ask('Unknown 1=mu 2=sigma 3=both', '1', 0)
+    s = mu = ''
+    if t == '1':
+        s = askn('sigma', '', 0)
+    elif t == '2':
+        mu = askn('mu', '', 0)
+    else:
+        t = '3'
+    out('X ~ N(' + (mu or 'mu') + ', ' + (_w(s) if s else 'sigma') + '^2)')
+    X = []
+    Z = []
+    for i in range(2 if t == '3' else 1):
+        c = ask('Cond ' + str(i + 1) + ': 1 P(X<x)=p 2 P(X>x)=p 3 P(x<X<mu)=p 4 P(mu<X<x)=p', '1', 0)
+        x, p = askv('x, p', '', 0)
+        pv = F(_q(p))
+        pl = [pv, 1 - pv, 0.5 - pv, 0.5 + pv][int(c) - 1]
+        out(['P(X<', 'P(X>', 'P(' + x + '<X<mu', 'P(mu<X<'][int(c) - 1] + (x if c != '3' else '') + ') = ' + p)
+        if not 0 < pl < 1:
+            out('Error: p out of range')
+            wait()
+            return
+        if c != '1':
+            out(' => P(X<' + x + ') = ' + _t(pl))
+        z = _inv(repr(pl))
+        out('z' + (str(i + 1) if t == '3' else '') + ' = invNorm(' + _t(pl) + ') = ' + _z4(z))
+        X.append(x)
+        Z.append(z)
+    x = X[0]
+    z = Z[0]
+    zs = _z4(z)
+    if t == '1':
+        out('(' + x + ' - mu)/' + _w(s) + ' = ' + zs)
+        out('mu = ' + join_signed([x, '-' + zs + '(' + s + ')'] if zs != '0' else [x]))
+        m = F(_q(x)) - z * F(_q(s))
+        out('ANS: mu = ' + _s3(m))
+    elif t == '2':
+        out('(' + _d(x, mu) + ')/sigma = ' + zs)
+        if abs(z) < 1e-12:
+            out('Cannot find sigma from p=0.5')
+            wait()
+            return
+        out('sigma = (' + _d(x, mu) + ')/' + (zs if z > 0 else '(' + zs + ')'))
+        sv = (F(_q(x)) - F(_q(mu))) / z
+        if sv <= 0:
+            out('sigma<=0: check inequality directions')
+        else:
+            out('ANS: sigma = ' + _s3(sv))
+    else:
+        x2 = X[1]
+        z2 = Z[1]
+        out(x + ' - mu = ' + zs + ' sigma  (1)')
+        out(x2 + ' - mu = ' + _z4(z2) + ' sigma  (2)')
+        dx = F(_q(x2)) - F(_q(x))
+        dz = z2 - z
+        out('(2)-(1): ' + _t(dx) + ' = ' + _z4(dz) + ' sigma')
+        if abs(dz) < 1e-12 or dx / dz <= 0:
+            out('sigma<=0: check inequality directions')
+            wait()
+            return
+        sv = dx / dz
+        m = F(_q(x)) - z * sv
+        out('sigma = ' + sf3(sv, 5))
+        out('mu = ' + join_signed([x, '-' + zs + '(' + sf3(sv, 5) + ')']))
+        out('ANS: mu = ' + _s3(m) + ', sigma = ' + _s3(sv))
+    wait()
+
+
+ITEMS = [('Binomial', binomial_dist), ('Normal prob', normal_prob),
+         ('Normal mu/sigma', normal_unknown)]

@@ -1,0 +1,852 @@
+{
+ "solvers": [
+  {
+   "id": "tri_solve",
+   "menu_label": "Triangle solver",
+   "syllabus_ref": "SL 3.2 sine rule (incl. ambiguous case), cosine rule, area 1/2 ab sinC; SL 3.1 angles in solids via triangles",
+   "inputs": [
+    "Deg or rad (d/r) [d]",
+    "a (blank=unknown) []",
+    "b []",
+    "c []",
+    "A []",
+    "B []",
+    "C []"
+   ],
+   "steps": [
+    "Given: a={a} b={b} c={c} A={A} B={B} C={C}",
+    "[AAS/ASA] C = 180 - A - B = {C}",
+    "[AAS/ASA] a/sinA = b/sinB = c/sinC  (sine rule)",
+    "[AAS/ASA] b = {a}sin{B}/sin{A} = {b}",
+    "[SAS] a^2 = b^2 + c^2 - 2bc cosA  (cosine rule)",
+    "[SAS] a^2 = {b}^2 + {c}^2 - 2({b})({c})cos{A}",
+    "[SAS] a^2 = {a2}  =>  a = {a}",
+    "[SAS/SSS] cosB = (a^2 + c^2 - b^2)/(2ac) = {cB}",
+    "[SAS/SSS] B = arccos({cB}) = {B}",
+    "[SAS/SSS] C = 180 - A - B = {C}",
+    "[SSA] sinB/b = sinA/a  (sine rule)",
+    "[SSA] sinB = {b}sin{A}/{a} = {s}",
+    "[SSA s>1] sinB > 1 => no triangle",
+    "[SSA s=1] B = 90 => one (right-angled) triangle",
+    "[SSA s<1] B = arcsin({s}) = {B1}  or  B = 180 - {B1} = {B2}",
+    "[SSA] A + {B2} = {sum} < 180 => two triangles (ambiguous case)   | >= 180 => B = {B2} rejected",
+    "[SSA] Tri 1: C = {C1}, c = {a}sin{C1}/sin{A} = {c1}",
+    "[SSA] Tri 2: C = {C2}, c = {c2}",
+    "Area = (1/2)ab sinC = (1/2)({a})({b})sin{C}",
+    "Area = {area}",
+    "ANS: a={a}, b={b}, c={c}; A={A}, B={B}, C={C}; Area={area}",
+    "[2 triangles] ANS: B={B1}, C={C1}, c={c1}  OR  B={B2}, C={C2}, c={c2}"
+   ],
+   "giac_calls": [
+    "simplify(({a})*sin(({B})*pi/180)/sin(({A})*pi/180))",
+    "simplify(texpand(subst(sin(p+q),[p,q],[({A})*pi/180,({B})*pi/180])))",
+    "simplify(({b})^2+({c})^2-2*({b})*({c})*cos(({A})*pi/180))",
+    "simplify(sqrt({a2}))",
+    "normal((({a})^2+({c})^2-({b})^2)/(2*({a})*({c})))",
+    "simplify(acos({cB})*180/pi)",
+    "simplify(({b})*sin(({A})*pi/180)/({a}))",
+    "simplify(asin({s})*180/pi)",
+    "simplify(1/2*({a})*({b})*sin(({C})*pi/180))",
+    "evalf({expr})"
+   ],
+   "python_logic": "SHARED HELPERS for this whole area (pure Python + G): S(e)=G('simplify('+e+')'); N(e)=G('normal('+e+')'); F(e)=float(G('evalf('+e+')')); sf3(v): 3 s.f. string keeping trailing zeros (d=max(0,2-floor(log10|v|)); ('%.'+str(d)+'f')%v); isx(r): True if r contains none of 'asin','acos','atan','sin(','cos(','tan(','.'; show(lbl,e): r=S(e); if isx(r) out(lbl+' = '+r) else out(lbl+' = '+e) then out('  = '+sf3(F(e))); vin(prompt): strip '()[] ', split_top(s,','), norm each; every solver body is wrapped in try/except -> out('Error: '+short msg) and return to menu. Degree mode: U='*pi/180', H='180'; radian: U='', H='pi'. Angles are carried internally as exact Giac strings (e.g. 'asin(4/5)*180/pi') so later steps never reuse rounded values. TRIANGLE: side[0..2], ang[0..2], index i = side i opposite angle i. ns,na = counts known. Validate positives and sum of known angles < H. (1) na>=2 and ns>=1: third angle = H - sum; unknown side j = side_i*sin(ang_j)/sin(ang_i) using an index i with both known; sin(H-A-B) is computed as texpand(subst(sin(p+q))) so exact surds appear. (2) ns==3: triangle inequality (else 'No triangle'); cosine rule for the angle opposite the largest side first, second angle by cosine rule, third by angle sum. (3) ns==2, na==1: if the known angle's index is not a known-side index -> SAS: cosine rule for the third side, then cosine rule (not sine rule, avoids ambiguity) for one angle, angle sum for the last. Else SSA: s = side_j*sin(ang_i)/side_i; compare F(s) with 1 (tol 1e-9): >1 none, =1 right angle, <1: B1=asin(s), B2=H-B1; B2 kept iff F(ang_i+B2) < F(H)-1e-9; loop over the kept list (max 2) finishing each triangle (angle sum, sine rule). (4) otherwise 'Not enough data'. Area printed for each solved triangle using two sides and the included angle. Results printed with show() (exact when isx, else expression then 3 s.f.).",
+   "scope_limits": "One triangle per run; needs 3 independent data incl. at least one side (AAA rejected). Bearings/elevation/3D diagrams must be reduced to side/angle data by the student. If an exact form is not obtained the value is given to 3 s.f. after the expression; invalid data -> 'No triangle', back to menu.",
+   "tests": [
+    {
+     "input": "deg; b=5, c=7, A=60",
+     "expected": "a = sqrt(39); cosB = 3*sqrt(39)/26, B = 43.9, C = 76.1; Area = 35*sqrt(3)/4"
+    },
+    {
+     "input": "deg; a=5, b=8, A=30 (SSA)",
+     "expected": "sinB = 4/5; two triangles: B=53.1, C=96.9, c=4*sqrt(3)+3 (9.93) OR B=126.9, C=23.1, c=4*sqrt(3)-3 (3.93)"
+    },
+    {
+     "input": "deg; a=3, b=5, c=7",
+     "expected": "cosC = -1/2, C = 120; A = 21.8, B = 38.2; Area = 15*sqrt(3)/4"
+    },
+    {
+     "input": "deg; a=10, A=45, B=60",
+     "expected": "C = 75; b = 5*sqrt(6); c = 5*sqrt(3)+5 (13.7)"
+    }
+   ]
+  },
+  {
+   "id": "arc_sector",
+   "menu_label": "Arc/sector",
+   "syllabus_ref": "SL 3.4 radian measure, arc length, sector area (segment and chord via SL 3.2)",
+   "inputs": [
+    "Mode 1)r,theta 2)any two known [1]",
+    "Deg or rad (d/r) [r]",
+    "r",
+    "theta",
+    "(mode 2) known pair e.g. l=5,A=10 (names r,theta,l,A,P)"
+   ],
+   "steps": [
+    "[deg] theta = {d} x pi/180 = {t}",
+    "l = r theta = ({r})({t}) = {l}",
+    "A = (1/2)r^2 theta = (1/2)({r})^2({t})",
+    "A = {A}",
+    "P = 2r + l = 2({r}) + {l} = {P}",
+    "chord = 2r sin(theta/2) = {ch}",
+    "Segment = (1/2)r^2(theta - sin theta)",
+    "Segment = {seg}",
+    "ANS: l = {l}, A = {A}, P = {P}",
+    "[mode 2] {eq1}",
+    "[mode 2] {eq2}",
+    "[mode 2] theta = {t(r)}",
+    "[mode 2] {eq2 after substitution}",
+    "[mode 2] r = {r}   (r > 0)",
+    "[mode 2] theta = {t}",
+    "[mode 2] ANS: r = {r}, theta = {t}  (then l, A, P lines)"
+   ],
+   "giac_calls": [
+    "simplify(({d})*pi/180)",
+    "simplify(({r})*({t}))",
+    "simplify(1/2*({r})^2*({t}))",
+    "simplify(2*({r})+({l}))",
+    "simplify(2*({r})*sin(({t})/2))",
+    "simplify(1/2*({r})^2*(({t})-sin({t})))",
+    "solve({eq1},t)",
+    "subst({eq2},t={texpr})",
+    "solve({eq2s},r)",
+    "evalf({e})"
+   ],
+   "python_logic": "Mode 1: degrees converted to radians first (formulae need radians), then each line via show(). Mode 2: parse 'name=value' pairs with split_top(s,','); templates EQ={'l':'r*t=(L)','A':'r^2*t/2=(A)','P':'2*r+r*t=(P)'} with values substituted; theta known -> 'theta' replaced. If r known: substitute into a theta-equation, solve for t. If theta known: substitute, solve for r, keep F(r)>0. If neither: make t the subject of the 'l' (or 'P') equation via solve(eq,t), substitute into the other, solve for r, filter r>0, back-substitute. Reject roots with theta<=0 or theta>2pi (print 'rejected'). Then rerun Mode 1 output with found r, theta.",
+   "scope_limits": "Single circular sector. Composite shaded regions beyond sector/segment are combined by the student. No valid root -> 'No valid sector'.",
+   "tests": [
+    {
+     "input": "mode1 rad; r=6, theta=2*pi/3",
+     "expected": "l = 4*pi; A = 12*pi; P = 12+4*pi; chord = 6*sqrt(3); segment = 12*pi-9*sqrt(3)"
+    },
+    {
+     "input": "mode1 deg; r=10, theta=72",
+     "expected": "theta = 2*pi/5; l = 4*pi; A = 20*pi; P = 20+4*pi"
+    },
+    {
+     "input": "mode2; l=5, A=10",
+     "expected": "theta = 5/r, (1/2)r^2(5/r) = 10, r = 4, theta = 5/4"
+    },
+    {
+     "input": "mode2; P=20, r=5",
+     "expected": "theta = 2, l = 10, A = 25"
+    }
+   ]
+  },
+  {
+   "id": "solid_3d",
+   "menu_label": "3D solids",
+   "syllabus_ref": "SL 3.1 distance and midpoint in 3D, volume and surface area of solids, angle between line and plane / two lines in a solid",
+   "inputs": [
+    "Option 1)dist/mid 2)vol/SA 3)line-base angle 4)angle at vertex",
+    "Points (x,y,z)",
+    "Solid 1 cuboid 2 cylinder 3 cone 4 sphere 5 hemisphere 6 rect pyramid",
+    "Dimensions (l,w,h | r,h | r)",
+    "Closed cylinder? [y]",
+    "Base plane z = [0]",
+    "Deg? [n]"
+   ],
+   "steps": [
+    "[1] d = sqrt((x2-x1)^2 + (y2-y1)^2 + (z2-z1)^2)",
+    "[1] d = sqrt(({dx})^2 + ({dy})^2 + ({dz})^2) = {d}",
+    "[1] M = ((x1+x2)/2, (y1+y2)/2, (z1+z2)/2) = ({mx}, {my}, {mz})",
+    "[2] V = {formula}",
+    "[2] V = {substituted}",
+    "[2] V = {V}",
+    "[2 cone] l = sqrt(r^2 + h^2) = {l}",
+    "[2 pyramid] slant heights sqrt(h^2+(w/2)^2) = {s1}, sqrt(h^2+(l/2)^2) = {s2}",
+    "[2] SA = {formula} = {substituted} = {SA}",
+    "[3] F = ({xQ}, {yQ}, {k})  (foot of perpendicular from Q)",
+    "[3] QF = {QF},  PF = {PF}",
+    "[3] tan theta = QF/PF = {r}",
+    "[3] theta = arctan({r}) = {theta}",
+    "[4] PQ = {p}, QR = {q}, PR = {s}",
+    "[4] cos(PQR) = (PQ^2 + QR^2 - PR^2)/(2 PQ.QR)  (cosine rule)",
+    "[4] cos(PQR) = {v}  =>  angle = {theta}",
+    "ANS: {result}"
+   ],
+   "giac_calls": [
+    "simplify(sqrt(({dx})^2+({dy})^2+({dz})^2))",
+    "simplify((({x1})+({x2}))/2)",
+    "simplify({V template with values})",
+    "simplify(sqrt(({r})^2+({h})^2))",
+    "simplify(abs(({zQ})-({k})))",
+    "simplify(atan({r}))",
+    "simplify(atan({r})*180/pi)",
+    "normal((({p})^2+({q})^2-({s})^2)/(2*({p})*({q})))",
+    "simplify(acos({v}))",
+    "evalf({e})"
+   ],
+   "python_logic": "Option 1: vin() two points (2D padded z=0), formula line, substituted line (differences via S), results. Option 2: table of solids, each with (display formula, Giac template with placeholders R,H,L,W): cuboid V=lwh, SA=2(lw+lh+wh); cylinder V=pi r^2 h, SA=2pi r^2+2pi r h (open: drop pi r^2 terms); cone: ask h or slant l; compute the other first (l=sqrt(r^2+h^2) or h=sqrt(l^2-r^2)), V=(1/3)pi r^2 h, SA=pi r^2+pi r l; sphere V=(4/3)pi r^3, SA=4pi r^2; hemisphere V=(2/3)pi r^3, SA=3pi r^2 (2pi r^2 curved + pi r^2 base, both shown); rectangular right pyramid V=(1/3)lwh, SA=lw+l*s1+w*s2 with slant heights printed (and lateral edge sqrt(h^2+(l/2)^2+(w/2)^2) on request). Values substituted by str.replace of '(R)' etc. Option 3: P on base, Q off it, plane z=k; F=(xQ,yQ,k); QF=|zQ-k|, PF=distance(P,F); QF=0 -> 0, PF=0 -> 90 deg; theta=atan(QF/PF). Option 4: three points, three lengths, cosine rule at Q. Angles exact if isx else 3 s.f.; radians unless Deg.",
+   "scope_limits": "Standard solids only; composite solids added by the student. Option 3 assumes a horizontal plane z=k; oblique planes -> Plane intersect option 2. Missing dimension -> 'Bad input'.",
+   "tests": [
+    {
+     "input": "opt1; A(1,2,3), B(4,6,15)",
+     "expected": "d = sqrt(9+16+144) = 13; M = (5/2, 4, 9)"
+    },
+    {
+     "input": "opt2 cone; r=3, h=4",
+     "expected": "l = 5; V = 12*pi; SA = 9*pi+15*pi = 24*pi"
+    },
+    {
+     "input": "opt2 rect pyramid; l=6, w=6, h=4",
+     "expected": "slant heights 5, 5; V = 48; SA = 36+30+30 = 96"
+    },
+    {
+     "input": "opt3; P(0,0,0), Q(3,4,12), z=0",
+     "expected": "PF = 5, QF = 12, tan theta = 12/5, theta = arctan(12/5) = 1.18 rad (67.4 deg)"
+    }
+   ]
+  },
+  {
+   "id": "trig_values",
+   "menu_label": "Trig values",
+   "syllabus_ref": "SL 3.5 unit circle, exact values; SL 3.6 Pythagorean identity, double angle sin/cos; AHL 3.9 sec/cosec/cot, arcsin/arccos/arctan; AHL 3.10 compound angles, tan 2A",
+   "inputs": [
+    "Option 1)f(angle) 2)inverse 3)given ratio 4)A+-B",
+    "Deg or rad [r]",
+    "f (sin cos tan sec csc cot)",
+    "angle or value v",
+    "Quadrant 1-4 of x (opt 3/4)",
+    "Half angle too? [n]",
+    "(opt 4) f, value, quadrant for B; sign + or - [+]"
+   ],
+   "steps": [
+    "[1] {f}({t}) = {f}({t0})   (subtract 2pi k, if reduced)",
+    "[1] {t0} in Q{q}; ref angle = {alpha}",
+    "[1] {f} {> or <} 0 in Q{q}",
+    "[1] {f}({t}) = {sign}{f}({alpha}) = {val}",
+    "[1 sec/csc/cot] {f}({t}) = 1/{base}({t}) = {val}",
+    "[1 axis] {t0} on axis: point ({X},{Y})  =>  {val}",
+    "[2] arccos({v}): cos theta = {v}, 0 <= theta <= pi",
+    "[2] ref angle = arccos({|v|}) = {alpha}",
+    "[2] theta = pi - {alpha} = {theta}  (v<0)",
+    "[3 sec/csc/cot] cos x = 1/{v}",
+    "[3] cos^2x = 1 - sin^2x = 1 - ({v})^2 = {c2}",
+    "[3 tan] sec^2x = 1 + tan^2x = {s2}",
+    "[3] Q{q}: cos x < 0  =>  cos x = -sqrt({c2}) = {c}",
+    "[3] tan x = sin x/cos x = {t}",
+    "[3] sec x = {sc}, cosec x = {cs}, cot x = {ct}",
+    "[3] sin2x = 2sinx cosx = 2({s})({c}) = {s2x}",
+    "[3] cos2x = 1 - 2sin^2x = {c2x}",
+    "[3] tan2x = 2tanx/(1 - tan^2x) = {t2x}",
+    "[3 half] cos x = 2cos^2(x/2) - 1 => cos(x/2) = {sign}sqrt((1+cos x)/2) = {ch}",
+    "[4] sin(A+B) = sinA cosB + cosA sinB",
+    "[4] = ({sA})({cB}) + ({cA})({sB}) = {v}",
+    "[4] cos(A+B) = cosA cosB - sinA sinB = {v}",
+    "[4] tan(A+B) = (tanA + tanB)/(1 - tanA tanB) = {v}",
+    "ANS: {values}"
+   ],
+   "giac_calls": [
+    "simplify(({t})-2*pi*floor(({t})/(2*pi)))",
+    "evalf({t0})",
+    "simplify(pi-({t0}))",
+    "simplify({f}({alpha}))",
+    "normal(1/cos({alpha}))",
+    "simplify(acos(abs({v})))",
+    "simplify(asin(abs({v})))",
+    "normal(1-({v})^2)",
+    "normal(1+({v})^2)",
+    "normal(sqrt({c2}))",
+    "normal(({s})/({c}))",
+    "normal(2*({s})*({c}))",
+    "normal(1-2*({s})^2)",
+    "normal(2*({t})/(1-({t})^2))",
+    "normal(({sA})*({cB})+({cA})*({sB}))",
+    "normal(sqrt((1+({c}))/2))"
+   ],
+   "python_logic": "Option 1: P2='2*pi' or '360', QT='pi/2' or '90'. t0=S(t-P2*floor(t/P2)); m=F(t0)/F(QT); if |m-round(m)|<1e-9 -> axis angle, point from [(1,0),(0,1),(-1,0),(0,-1)][round(m)%4]; value X, Y, Y/X, 1/X, 1/Y, X/Y ('undefined' if divisor 0). Else q=int(m)+1; alpha from [t0, pi-t0, t0-pi, 2pi-t0][q-1]; sign table SG={'sin':'++--','cos':'+--+','tan':'+-+-'}, sec->cos, csc->sin, cot->tan. Value S(f(alpha)) or N(1/base(alpha)); if the result still contains the function name -> non-standard, print 3 s.f. Option 2: validate |v|<=1 (arcsin, arccos); arcsin/arctan: theta = sign(v)*alpha; arccos: v>=0 alpha else pi-alpha; optional outer f(arc..(v)) evaluated by option-3 core with quadrant from the inverse range (arccos: Q1 if v>=0 else Q2; arcsin/arctan: Q1 if v>=0 else Q4); also arc..(f(angle)) by option 1 then option 2. Option 3: reciprocal given -> base ratio = 1/v (printed). Base sin -> cos from Pythagorean identity; base cos -> sin; base tan -> sec^2=1+tan^2, cos=1/sec, sin=tan*cos. Validate |sin|,|cos|<=1 and sign of v matches SG for q (else 'Inconsistent data'). Root sign from SG. Then all six ratios (normal() rationalises), sin2x, cos2x (form 1-2sin^2 if sin given, 2cos^2-1 if cos given, cos^2-sin^2 if tan given), tan2x ('undefined' if 1-tan^2=0). Half angle (assumes 0<=x<2pi): x/2 in Q1 if q<=2 else Q2; sin(x/2)=sqrt((1-cosx)/2) (>=0), cos(x/2)=+-sqrt((1+cosx)/2). Option 4: option-3 core for A and B (two short lines each), then sin, cos, tan of A+B or A-B with formula line, substituted line, normal().",
+   "scope_limits": "Angles given as exact multiples of pi or degrees; option 3/4 need the quadrant (from the stated interval). Non-standard angles -> 3 s.f. Undefined values printed 'undefined'.",
+   "tests": [
+    {
+     "input": "opt1 rad; cos(7*pi/6)",
+     "expected": "Q3, ref angle pi/6, cos < 0: -cos(pi/6) = -sqrt(3)/2"
+    },
+    {
+     "input": "opt3; sin x = 3/5, Q2",
+     "expected": "cos x = -4/5, tan x = -3/4, sin2x = -24/25, cos2x = 7/25, tan2x = -24/7"
+    },
+    {
+     "input": "opt3; tan x = 2, Q3",
+     "expected": "sec x = -sqrt(5), cos x = -sqrt(5)/5, sin x = -2*sqrt(5)/5, sin2x = 4/5, cos2x = -3/5, tan2x = -4/3"
+    },
+    {
+     "input": "opt4; sinA=3/5 Q1, cosB=5/13 Q1, +",
+     "expected": "cosA=4/5, sinB=12/13; sin(A+B) = 63/65, cos(A+B) = -16/65, tan(A+B) = -63/16"
+    }
+   ]
+  },
+  {
+   "id": "trig_ident",
+   "menu_label": "Trig identities",
+   "syllabus_ref": "SL 3.6 Pythagorean and double angle (sin, cos); AHL 3.9 1+tan^2=sec^2, 1+cot^2=cosec^2; AHL 3.10 compound angle, tan 2A; AHL 3.11 symmetry (sin(pi-x) etc.)",
+   "inputs": [
+    "Option 1)expand 2)simplify 3)verify LHS=RHS",
+    "Expression (opt 1/2) e.g. cos(pi/4-pi/6), sin(3x)",
+    "cos2A form 1)c^2-s^2 2)2c^2-1 3)1-2s^2 [2]",
+    "In terms of 0)any 1)sin 2)cos [0]",
+    "LHS (opt 3)",
+    "RHS (opt 3)"
+   ],
+   "steps": [
+    "[1 sum] {f}(A {+-} B) = {formula}  (compound angle)",
+    "[1 sum] A = {A}, B = {B}",
+    "[1 sum] = {formula with values}",
+    "[1 sum] = {result}",
+    "[1 2A] {f}(2A) = {double-angle formula}  (double angle)",
+    "[1 3A] {f}(3A) = {f}(2A + A) = {compound}, then double angle",
+    "[1] = {expanded}",
+    "[1] ANS: {result}",
+    "[2/3] LHS = {L}",
+    "[2/3] = {L in sin, cos}  (sec=1/cos, cosec=1/sin, cot=cos/sin)",
+    "[2/3] = {texpand}  (double/compound angle)",
+    "[2/3] = {normal}  (common denominator)",
+    "[2/3] = {rewrite}  (sin^2x + cos^2x = 1)",
+    "[2/3] = {simplified}",
+    "[3] = RHS",
+    "[3 if needed] RHS = ... = {same form}",
+    "[3] ANS: LHS = RHS (identity verified)",
+    "[3 fail] x = {x0}: LHS = {l}, RHS = {r}",
+    "[3 fail] ANS: not an identity",
+    "[2] ANS: {simplest}"
+   ],
+   "giac_calls": [
+    "simplify(sin({A}))",
+    "simplify(cos({B}))",
+    "normal({substituted})",
+    "expand({e})",
+    "texpand({e})",
+    "normal({e})",
+    "trigsin({e})",
+    "trigcos({e})",
+    "trigtan({e})",
+    "tan2sincos({e})",
+    "simplify({e})",
+    "simplify(texpand(({L})-({R})))",
+    "tsimplify(({L})-({R}))",
+    "evalf(subst(({L})-({R}),x={x0}))"
+   ],
+   "python_logic": "calls(s): scan for 'sin(','cos(','tan(','sec(','csc(','cosec(','cot(' (check preceding char is not a letter, so 'asin(' is skipped) and find the matching ')' with a depth counter -> list of (name,arg,start,end); bounded by len(s). recip(s): loop max 20, replace first reciprocal call by '(1/cos(arg))', '(1/sin(arg))', '(cos(arg)/sin(arg))'. OPTION 1: outer call f(arg); terms=split_terms(arg). If >=2 terms: A=terms[0], rest=join(terms[1:]); minus formula with B=rest[1:] only if exactly 2 terms and rest starts with '-', else plus formula with B=rest. Formula text from a dict keyed (f,sign). Values sinA=S('sin('+A+')') etc. (constants give exact values, x-terms stay), substituted string printed, then N() result. If one term: k=S(diff(arg,x)) with check S(arg-k*x)=='0': k=2 -> double angle (cos form per user); k=3 -> 3A=2A+A compound step, then double-angle substitution (2 fixed rounds); k=4 -> double angle twice; other k -> texpand result labelled 'multiple angle'. In-terms-of choice -> trigsin/trigcos on the result. Check S(texpand(orig)-(result))=='0' before ANS. OPTION 2/3: stage pipeline [recip, texpand, normal, Pythagorean rewrite (try trigsin, trigcos, trigtan, keep shortest), simplify]; a stage is printed only if its string differs from the previous (max 6 lines). Option 3: D=S(texpand(recip(L)-recip(R))) (fallback tsimplify); '0' -> '= RHS' (if the LHS chain does not end in S(RHS) form, run the same pipeline on RHS and finish 'LHS = RHS'). Non-zero -> numeric test at x0 in [pi/6, 0.7, 1.3] (first point where both sides defined): |L-R|>1e-9 -> counterexample (exact values at pi/6), else 'Identity holds (numeric check)' with the steps obtained.",
+   "scope_limits": "Single variable x; sin, cos, tan, sec, cosec, cot of linear arguments; multiples up to 4A. t=tan(x/2) substitutions and R sin(x+a) forms are not AA HL methods -> only the labelled texpand/simplify result. 'Show that' write-up quality is the student's responsibility.",
+   "tests": [
+    {
+     "input": "opt1; sin(x+pi/3)",
+     "expected": "sinx cos(pi/3) + cosx sin(pi/3) = sin(x)/2 + sqrt(3)*cos(x)/2"
+    },
+    {
+     "input": "opt1; cos(pi/4-pi/6)",
+     "expected": "cos(pi/4)cos(pi/6) + sin(pi/4)sin(pi/6) = sqrt(6)/4 + sqrt(2)/4 = (sqrt(6)+sqrt(2))/4"
+    },
+    {
+     "input": "opt3; LHS (1-cos(2x))/sin(2x), RHS tan(x)",
+     "expected": "(1-(2cos^2x-1))/(2sinx cosx) = 2sin^2x/(2sinx cosx) = sin(x)/cos(x) = tan(x); identity verified"
+    },
+    {
+     "input": "opt3; LHS sin(2x), RHS 2*sin(x)",
+     "expected": "not an identity: x = pi/6 gives LHS = sqrt(3)/2, RHS = 1"
+    }
+   ]
+  },
+  {
+   "id": "trig_eq",
+   "menu_label": "Trig equation",
+   "syllabus_ref": "SL 3.8 trig equations in a finite interval incl. quadratic in sin/cos and use of identities; AHL 3.9-3.10 equations with sec/cosec/cot, compound/double angle",
+   "inputs": [
+    "Equation lhs=rhs in x",
+    "Deg or rad [r]",
+    "Lower bound [0]",
+    "Upper bound [2*pi | 360]",
+    "Include endpoints? [y]"
+   ],
+   "steps": [
+    "{lhs} = {rhs}",
+    "[rewrite] cos(2x) = 1 - 2sin^2x  (double angle)   | sin(2x) = 2sinx cosx | sin^2x = 1 - cos^2x | sec^2x = 1 + tan^2x",
+    "{rewritten} = 0",
+    "[a sinA = b cosA] divide by cos A: tan A = {k}",
+    "Let u = {T(A)}",
+    "{poly in u} = 0",
+    "({fac1})({fac2}) = 0",
+    "u = {u1}  or  u = {u2}",
+    "[product] {F1} x {F2} = 0  =>  {F1} = 0 or {F2} = 0",
+    "{T(A)} = {c}",
+    "[|c|>1] {T(A)} = {c} has no solution",
+    "[A not x] {L} <= {A} <= {U}",
+    "ref angle = {alpha}   | ref angle = arcsin({|c|}) = {3sf}",
+    "{T} {> or <} 0: Q{p}, Q{q}",
+    "{A} = {list}",
+    "[A not x] x = {list}",
+    "ANS: x = {sorted list}",
+    "[non-exact] x = {expr} = {3sf}, ...",
+    "[fallback] Using GDC: x = {roots 3 s.f.}"
+   ],
+   "giac_calls": [
+    "simplify(({A2})-2*({A}))",
+    "expand({f})",
+    "normal({f})",
+    "numer(normal({f}))",
+    "factor({g})",
+    "solve({g}=0,u)",
+    "degree({g},u)",
+    "diff({A},x)",
+    "subst({A},x=0)",
+    "diff({A},x,2)",
+    "simplify(({k})*({lo})+({b0}))",
+    "simplify(asin(abs({c})))",
+    "simplify(acos(abs({c})))",
+    "simplify(atan(abs({c})))",
+    "simplify(({theta})+({n})*({P2}))",
+    "simplify((({theta})-({b0}))/({k}))",
+    "evalf({e})",
+    "seq(evalf(subst({f},x={lo}+j*(({hi})-({lo}))/120)),j,0,120)",
+    "fsolve({f}=0,x={a}..{b})"
+   ],
+   "python_logic": "f = norm(lhs)+'-('+norm(rhs)+')'. cl=calls(f) (trig_ident helper); args canonicalised with S. Rewrite passes (max 3, each printed with its rule name): R1 double angle if args A and 2A both occur (S(A2-2*A)=='0'): sin(2A)->(2*sin(A)*cos(A)); cos(2A)->(1-2*sin(A)^2) if sin(A) present else (2*cos(A)^2-1); tan(2A)->(2*tan(A)/(1-tan(A)^2)). R2 Pythagorean (single arg, both sin & cos): replace 'cos(A)^2' by a marker; if no 'cos(' remains, cos(A)^2->(1-sin(A)^2); symmetric for sin; sec^2->(1+tan^2) when tan present; cosec^2->(1+cot^2). R3 if f is a*sin(A)+b*cos(A) (substitute S,C symbols: linear, no constant) -> tan(A)=-b/a. R4 tan with sin/cos -> tan(A)=sin(A)/cos(A), take numer(normal()), note cos(A)!=0. Then g=expand(f), print '= 0'. Classify: if one distinct call T(A): replace its text (taken from G output) with 'u'; require no 'x' left and degree(g,u)<=4; print factor(g); roots=parse_list(solve(g=0,u)). Else factor(g), split_top(...,'*'), strip '^n', each factor (max 6) must contain one call -> same u-method. Each (T,A,c) -> tbasic. tbasic(T,A,c,lo,hi,deg): sec/csc/cot -> cos/sin/tan = 1/c (printed); sin/cos with F(|c|)>1+1e-12 -> 'no solution'; k=S(diff(A,x)), b0=S(subst(A,x=0)), require diff(A,x,2)==0; L=S(k*lo+b0), U=S(k*hi+b0), swap if F(k)<0, print interval if A!='x'. P2='2*pi'/'360', HP='pi'/'180'. alpha=S(asin|acos|atan(abs(c))) (deg: *180/pi). Base list in [0,P2): sin c>0 [alpha, HP-alpha], c<0 [HP+alpha, P2-alpha]; cos c>0 [alpha, P2-alpha], c<0 [HP-alpha, HP+alpha]; tan c>0 [alpha, HP+alpha], c<0 [HP-alpha, P2-alpha]; special c=0, +-1 single/axis values. For each base theta: n from floor((F(L)-F(theta))/F(P2)) to ceil((F(U)-F(theta))/F(P2)) (clamped to 50 iterations); keep F(L)-tol<=F(theta+nP2)<=F(U)+tol (strict if endpoints excluded). Print A-list, then x=S((theta-b0)/k); sort by float, dedupe (tol 1e-9). If alpha not isx print expression and 3 s.f. ANS = union of all branches. FALLBACK (any classification failure): one seq() call for 121 sample values, Python finds sign changes / near-zero dips, fsolve in each bracket (max 20), print 'Using GDC:' with 3 s.f. roots.",
+   "scope_limits": "Equations reducible to a polynomial (deg<=4) in one trig function of one linear argument, or a product of such factors, via double angle, Pythagorean, tan=sin/cos rewrites. Mixed arguments other than A and 2A, and a sinx + b cosx = c (c!=0) are not AA HL analytic methods -> GDC fallback. General solutions not produced (not required). Max 50 solutions.",
+   "tests": [
+    {
+     "input": "2*cos(2*x)=-1, rad, [0,2*pi]",
+     "expected": "cos(2x) = -1/2; 0<=2x<=4pi; ref pi/3; Q2,Q3; 2x = 2pi/3, 4pi/3, 8pi/3, 10pi/3; x = pi/3, 2pi/3, 4pi/3, 5pi/3"
+    },
+    {
+     "input": "2*cos(x)^2=1+sin(x), rad, [0,2*pi]",
+     "expected": "2(1-sin^2x) = 1+sinx; 2u^2+u-1 = 0; (2u-1)(u+1) = 0; x = pi/6, 5pi/6, 3pi/2"
+    },
+    {
+     "input": "sin(2*x)=cos(x), rad, [0,pi]",
+     "expected": "2sinx cosx - cosx = 0; cosx(2sinx-1) = 0; x = pi/6, pi/2, 5pi/6"
+    },
+    {
+     "input": "cos(2*x)=sin(x), deg, [0,360]",
+     "expected": "1-2sin^2x = sinx; (2u-1)(u+1) = 0; x = 30, 150, 270"
+    }
+   ]
+  },
+  {
+   "id": "trig_graph",
+   "menu_label": "Trig graphs",
+   "syllabus_ref": "SL 3.7 circular functions: amplitude, period, horizontal/vertical shifts, f(x)=a sin(b(x+c))+d; AHL 3.9 reciprocal functions (period, asymptotes)",
+   "inputs": [
+    "Option 1)features 2)find a,b,c,d 3)max/min/zeros",
+    "f(x) e.g. 3*sin(2*(x-pi/4))+1",
+    "Deg or rad [r]",
+    "(opt 2) max, min, period, sin/cos model, x of a max [none]",
+    "(opt 3) lower, upper bounds"
+   ],
+   "steps": [
+    "[1] f(x) = {a}{T}({A}) + {d}",
+    "[1] {A} = {b}(x - {c})",
+    "[1] amplitude = |a| = {amp}",
+    "[1] period = 2pi/|b| = {per}   (tan, cot: pi/|b|)",
+    "[1] horizontal shift {|c|} {right or left}",
+    "[1] principal axis y = {d}",
+    "[1] max = d + |a| = {max},  min = d - |a| = {min}",
+    "[1] range: {min} <= f(x) <= {max}",
+    "[1 tan/sec/csc/cot] asymptotes where {cos or sin}({A}) = 0",
+    "[2] a = (max - min)/2 = {a}",
+    "[2] d = (max + min)/2 = {d}",
+    "[2] b = 2pi/period = {b}",
+    "[2 sin] b(x1 - c) = pi/2 => c = {c}   | [cos] c = x1",
+    "[2] ANS: f(x) = {a}sin({b}(x - {c})) + {d}",
+    "[3] max: {T}({A}) = {+-1} -> (trig eq lines)",
+    "[3] min: {T}({A}) = {-+1} -> (trig eq lines)",
+    "[3] zeros: {T}({A}) = {-d/a} -> (trig eq lines)",
+    "[3] y-intercept f(0) = {f0}",
+    "ANS: {features / points}"
+   ],
+   "giac_calls": [
+    "diff({g},w)",
+    "subst({g},w=0)",
+    "diff({g},w,2)",
+    "diff({A},x)",
+    "subst({A},x=0)",
+    "diff({A},x,2)",
+    "simplify(-({b0})/({b}))",
+    "simplify(abs({a}))",
+    "simplify(2*pi/abs({b}))",
+    "simplify(({d})+abs({a}))",
+    "simplify((({mx})-({mn}))/2)",
+    "simplify((({mx})+({mn}))/2)",
+    "simplify(2*pi/({per}))",
+    "simplify(({x1})-pi/(2*({b})))",
+    "simplify(subst({f},x={x0}))"
+   ],
+   "python_logic": "Option 1: calls(f) must yield one distinct trig call T(A); g = f with that call text replaced by 'w' (str.replace); require diff(g,w,2)=='0' and no 'x' identifier left in g, else 'Not a*T(bx+c)+d'. a=S(diff(g,w)), d=S(subst(g,w=0)); b=S(diff(A,x)), b0=S(subst(A,x=0)), linear check; c=S(-b0/b); direction by F(c). sin/cos: amplitude, period 2pi/|b|, max/min, range. tan/cot: period pi/|b|, no amplitude, range all real. sec/csc: no amplitude, range y<=d-|a| or y>=d+|a|; asymptotes listed via tbasic (trig_eq) if an interval is given. Degree mode: 2pi->360, pi->180. Option 2: a=(max-min)/2 (negated if the model starts at a minimum), d=(max+min)/2, b=2pi/period; c from x of a maximum (sin: x1-(pi/2)/b, cos: x1). Option 3: max where T(A)=1 if F(a)>0 else -1 (sin/cos) via tbasic; min the opposite; zeros T(A)=-d/a via tbasic (none if |.|>1); each point printed (x, S(subst(f,x=..))).",
+   "scope_limits": "Single term a*T(bx+c)+d with linear argument. Sums of different trig terms -> 'Not a single sinusoid: use GDC'. Sketch not produced.",
+   "tests": [
+    {
+     "input": "opt1; 3*sin(2*(x-pi/4))+1",
+     "expected": "amplitude 3, period pi, shift pi/4 right, axis y=1, max 4, min -2, range -2<=f(x)<=4"
+    },
+    {
+     "input": "opt1; -2*cos(x/2)+5",
+     "expected": "amplitude 2, period 4*pi, no horizontal shift, axis y=5, max 7, min 3"
+    },
+    {
+     "input": "opt2; max 7, min 1, period 8, sin model, max at x=2",
+     "expected": "a = 3, d = 4, b = pi/4, c = 0: f(x) = 3*sin(pi/4*x)+4"
+    },
+    {
+     "input": "opt3; 3*sin(2*(x-pi/4))+1 on [0,pi]",
+     "expected": "max (pi/2, 4); min (0,-2) and (pi,-2); zeros sin(2x-pi/2) = -1/3: x = 0.615, 2.53"
+    }
+   ]
+  },
+  {
+   "id": "vec_ops",
+   "menu_label": "Vectors",
+   "syllabus_ref": "AHL 3.12 components, magnitude, unit vector, position vectors, AB, parallel; AHL 3.13 scalar product, angle, perpendicular; AHL 3.16 vector product, area of parallelogram/triangle",
+   "inputs": [
+    "Option 1)AB,|v|,unit 2)parallel 3)dot/angle 4)cross/area 5)find k",
+    "Point/vector (x,y,z) or [x,y,z]",
+    "Length for scaled vector [none]",
+    "Deg? [n]",
+    "(opt 5) vectors with k; condition perp/par/mag [perp]"
+   ],
+   "steps": [
+    "[1] AB = OB - OA = ({b1}-{a1}, {b2}-{a2}, {b3}-{a3}) = ({u1},{u2},{u3})",
+    "[1] |AB| = sqrt(({u1})^2 + ({u2})^2 + ({u3})^2) = {m}",
+    "[1] unit = (1/{m})({u1},{u2},{u3}) = ({e1},{e2},{e3})",
+    "[1] M = ({m1},{m2},{m3})",
+    "[1 L given] {L} x unit = ({..})",
+    "[2] {u1}/{v1} = {k1}, {u2}/{v2} = {k2}, {u3}/{v3} = {k3}",
+    "[2] u = {k}v => parallel   | ratios differ => not parallel",
+    "[3] u.v = ({u1})({v1}) + ({u2})({v2}) + ({u3})({v3}) = {d}",
+    "[3 d=0] u.v = 0 => perpendicular",
+    "[3] |u| = {mu}, |v| = {mv}",
+    "[3] cos theta = u.v/(|u||v|) = {d}/({mu}{mv}) = {c}",
+    "[3] theta = arccos({c}) = {theta}",
+    "[4] u x v = (u2v3 - u3v2, u3v1 - u1v3, u1v2 - u2v1)",
+    "[4] = (({u2})({v3}) - ({u3})({v2}), ..., ...)",
+    "[4] = ({w1},{w2},{w3})",
+    "[4] |u x v| = {m}",
+    "[4] parallelogram = |u x v| = {m};  triangle = (1/2)|AB x AC| = {h}",
+    "[5 perp] u.v = {expr} = 0  =>  k = {k}",
+    "[5 par] {u_i}/{v_i} = {u_j}/{v_j}  =>  k = {k}; check 3rd component",
+    "[5 mag] |u|^2 = {expr} = {m}^2  =>  k = {k1} or {k2}",
+    "ANS: {result}"
+   ],
+   "giac_calls": [
+    "simplify(({b1})-({a1}))",
+    "simplify(sqrt({sumsq}))",
+    "normal(({u1})/({m}))",
+    "simplify((({a1})+({b1}))/2)",
+    "normal(({u1})/({v1}))",
+    "simplify(({u1})*({v1})+({u2})*({v2})+({u3})*({v3}))",
+    "dot([{u}],[{v}])",
+    "normal(({d})/(({mu})*({mv})))",
+    "simplify(acos({c}))",
+    "simplify(acos({c})*180/pi)",
+    "simplify(({u2})*({v3})-({u3})*({v2}))",
+    "cross([{u}],[{v}])",
+    "l2norm([{w}])",
+    "solve({expr}=0,k)",
+    "evalf({e})"
+   ],
+   "python_logic": "vin() vectors; 2D allowed (padded with '0' only for cross product). Option 1: AB componentwise via S, magnitude S(sqrt(sum squares)), unit N(u_i/m), midpoint, optional L*unit. Option 2: for v_i!=0 ratio N(u_i/v_i); for v_i=0 require S(u_i)=='0'; parallel iff all ratios equal (S(r_i-r_j)=='0'). Option 3: dot printed term by term, S; cross-check with dot(); '0' -> perpendicular (theta = pi/2); else magnitudes, cos via N, theta via S(acos) (exact if isx else 3 s.f., degrees optional); acute-angle variant for lines uses |u.v|. Option 4: three minors printed in the (i, j, k) pattern, each S, cross-check with cross() via parse_list; magnitude; if three points given, AB and AC first and triangle area = |AB x AC|/2. Option 5: components may contain k; perp -> solve(dot=0,k); par -> solve(u_i*v_j-u_j*v_i=0,k) for each pair with nonzero data, keep k common to all (float compare); mag -> solve(sum squares=m^2,k).",
+   "scope_limits": "Numeric/exact components, one unknown k. Scalar triple product/volumes not in AA syllabus -> not offered. Malformed input -> 'Bad vector'.",
+   "tests": [
+    {
+     "input": "opt1; A(1,2,3), B(4,6,3)",
+     "expected": "AB = (3,4,0), |AB| = 5, unit = (3/5,4/5,0), M = (5/2,4,3)"
+    },
+    {
+     "input": "opt3; u=[1,2,2], v=[2,-1,2]",
+     "expected": "u.v = 4, |u| = |v| = 3, cos theta = 4/9, theta = arccos(4/9) = 1.11 rad (63.6 deg)"
+    },
+    {
+     "input": "opt5 perp; [2,k,1], [1,3,-4]",
+     "expected": "2+3k-4 = 0, k = 2/3"
+    },
+    {
+     "input": "opt4; u=[1,2,3], v=[4,5,6]",
+     "expected": "u x v = (-3,6,-3); |u x v| = 3*sqrt(6); triangle = 3*sqrt(6)/2"
+    }
+   ]
+  },
+  {
+   "id": "line_ops",
+   "menu_label": "Lines",
+   "syllabus_ref": "AHL 3.14 vector equation of a line (2D/3D), parametric and Cartesian forms, angle between lines; AHL 3.15 coincident/parallel/intersecting/skew, point of intersection",
+   "inputs": [
+    "Option 1)equation 2)Cart->vector 3)point on line? 4)angle 5)relationship 6)foot/shortest distance",
+    "Line input 1)point+dir 2)two points 3)Cartesian [1]",
+    "point a",
+    "direction b or second point",
+    "Deg? [n]"
+   ],
+   "steps": [
+    "[1] b = AB = ({b1},{b2},{b3})",
+    "[1] r = ({a1},{a2},{a3}) + t({b1},{b2},{b3})",
+    "[1] x = {a1} + {b1}t,  y = {a2} + {b2}t,  z = {a3} + {b3}t",
+    "[1] (x - {a1})/{b1} = (y - {a2})/{b2} = (z - {a3})/{b3}   (b_i=0: 'z = {a3}')",
+    "[2] {part}: point {x0}, direction {l}",
+    "[2] r = ({x0},{y0},{z0}) + t({l},{m},{n})",
+    "[3] {a1} + {b1}t = {p1} => t = {t1}   (each component)",
+    "[3] same t => P on line (t = {t})   | different => P not on line",
+    "[4] cos theta = |b1.b2|/(|b1||b2|) = |{d}|/({m1}{m2}) = {c}",
+    "[4] theta = {theta}",
+    "[5] b1 = k b2? ratios {r1}, {r2}, {r3}",
+    "[5 par] parallel; a2 on L1? => coincident | parallel (distinct)",
+    "[5] {a1x} + {b1x}t = {a2x} + {b2x}s   (i), (ii), (iii)",
+    "[5] from (i),(ii): t = {t}, s = {s}",
+    "[5] (iii): {lhs} = {rhs} true => intersect | false => skew",
+    "[5] P = ({x},{y},{z})",
+    "[6] FP = a + tb - P = ({..} + {..}t, ...)",
+    "[6] FP.b = 0 => {lin} = 0 => t = {t}",
+    "[6] foot F = ({..}); distance = |PF| = {d}",
+    "[6 skew] PQ.b1 = 0, PQ.b2 = 0 => t = {t}, s = {s}; shortest distance |PQ| = {d}",
+    "ANS: {result}"
+   ],
+   "giac_calls": [
+    "simplify(({b1})-({a1}))",
+    "simplify(diff({part},{var}))",
+    "solve({part}=0,{var})",
+    "normal(1/({slope}))",
+    "solve(({a1})+({b1})*t=({p1}),t)",
+    "simplify(abs(({b1})*({c1})+({b2})*({c2})+({b3})*({c3})))",
+    "simplify(acos({c}))",
+    "linsolve([{e1},{e2}],[t,s])",
+    "simplify(subst({e3},[t,s],[{t},{s}]))",
+    "expand({FP.b})",
+    "solve({lin}=0,t)",
+    "linsolve([{PQb1}=0,{PQb2}=0],[t,s])",
+    "simplify(sqrt({sumsq}))",
+    "evalf({e})"
+   ],
+   "python_logic": "get_line() -> (a,b): (1) point+dir; (2) two points, b=B-A printed; (3) Cartesian: split_top on '=' into parts; per part detect its variable (x/y/z), point comp = solve(part=0,var), dir comp = N(1/diff(part,var)); a missing variable -> dir comp 0, user asked its fixed value. Option 1 prints vector, parametric, Cartesian (omit '/1', write 'var = a_i' when b_i=0). Option 3: components with b_i!=0 solved for t, components with b_i=0 require a_i==p_i, all t equal (S diff =='0'). Option 4: acute angle via |dot|, exact if isx else 3 s.f. Option 5: parallel test (vec_ops option 2 routine); if parallel use option 3 with a2 -> coincident/parallel. Else E_i = a1_i+b1_i*t-(a2_i+b2_i*s); pick first pair (i,j) with nonzero determinant b1_i*(-b2_j)+b2_i*b1_j; linsolve; substitute into remaining equation (3D) -> S=='0' intersect (point from L1) else skew. 2D: non-parallel always intersect. Option 6: point-line: FP(t)=a+tb-P, FP.b expanded, linear solve, foot, distance. Skew lines: PQ = (a2+s b2)-(a1+t b1), two scalar-product equations, linsolve, |PQ| (common perpendicular, scalar-product method only).",
+   "scope_limits": "Lines in vector, two-point or symmetric Cartesian form (each variable linear in its own part). Line given by two planes -> Plane intersect option 4 first. Parameters shown as t and s (lambda, mu).",
+   "tests": [
+    {
+     "input": "opt1 two points; A(1,2,3), B(3,1,7)",
+     "expected": "r = (1,2,3)+t(2,-1,4); x=1+2t, y=2-t, z=3+4t; (x-1)/2 = (y-2)/(-1) = (z-3)/4"
+    },
+    {
+     "input": "opt2; (x-1)/2=(y+3)/(-1)=z/4",
+     "expected": "r = (1,-3,0)+t(2,-1,4)"
+    },
+    {
+     "input": "opt5; L1 (1,2,3)+t(1,1,1), L2 (1,4,2)+s(1,-1,2)",
+     "expected": "t = 1, s = 1, (iii) 4 = 4 true: intersect at (2,3,4)"
+    },
+    {
+     "input": "opt5; L1 (0,0,0)+t(1,0,0), L2 (0,1,1)+s(0,1,0)",
+     "expected": "not parallel; t = 0, s = -1; (iii) 0 = 1 false: skew"
+    }
+   ]
+  },
+  {
+   "id": "kinematics",
+   "menu_label": "Vector motion",
+   "syllabus_ref": "AHL 3.14 kinematics with r = a + tv: position, velocity, speed, constant-velocity models, two moving objects",
+   "inputs": [
+    "Option 1)position 2)speed 3)when at P 4)distance/closest 5)collide? 6)v from speed+dir",
+    "initial position a",
+    "velocity v",
+    "time t or point P",
+    "second object a2, v2 (opt 4/5)"
+   ],
+   "steps": [
+    "[1] r = ({a}) + t({v})",
+    "[1] r({t0}) = ({a1} + {t0}({v1}), ...) = ({x},{y},{z})",
+    "[2] speed = |v| = sqrt(({v1})^2 + ...) = {sp}",
+    "[3] {a1} + {v1}t = {p1} => t = {t}   (each component)",
+    "[3] t = {t} in all => at P when t = {t}   | never at P",
+    "[4] r_B - r_A = ({d1} + {e1}t, {d2} + {e2}t, ...)",
+    "[4] D^2 = ({..})^2 + ({..})^2 = {quad}",
+    "[4] d(D^2)/dt = {lin} = 0 => t = {t}",
+    "[4] D_min = sqrt({D2 at t}) = {D}",
+    "[4] A at ({..}), B at ({..})",
+    "[5] r_A(t) = r_B(t): {eq1}, {eq2}, ...",
+    "[5] t = {t} satisfies all => collide at ({..})   | no common t => no collision",
+    "[6] v = {speed} x ({d})/|({d})| = ({..})",
+    "ANS: {result}"
+   ],
+   "giac_calls": [
+    "simplify(({a1})+({t0})*({v1}))",
+    "simplify(sqrt(({v1})^2+({v2})^2+({v3})^2))",
+    "solve(({a1})+({v1})*t=({p1}),t)",
+    "expand(({d1})^2+({d2})^2+({d3})^2)",
+    "diff({D2},t)",
+    "solve({lin}=0,t)",
+    "simplify(sqrt(subst({D2},t={t})))",
+    "normal(({sp})*({d1})/sqrt({sumsq}))"
+   ],
+   "python_logic": "Components built as strings '(a_i)+(v_i)*t'. Option 3 reuses line_ops point-on-line routine. Option 4: d(t)=(a2-a1)+t(v2-v1); if v2-v1 = 0 -> constant distance; D2 = expand(sum d_i^2); t* = solve(diff(D2,t)=0); if F(t*)<0 print 't < 0, minimum for t>=0 at t = 0'; D_min = S(sqrt(subst)); also prints both positions. Optional distance at a given t. Option 5: solve first component with nonzero coefficient for t, substitute in the others (S=='0'); if no collision, optional 'paths cross?' via line_ops relationship with t, s. Option 6: v = speed*d/|d| componentwise with normal().",
+   "scope_limits": "Constant velocity only; variable velocity belongs to calculus kinematics. Both objects timed from t=0 (a later start t0: student enters a - t0*v).",
+   "tests": [
+    {
+     "input": "opt1+2; a=(1,2), v=(3,4), t=2",
+     "expected": "r(2) = (7,10); speed = 5"
+    },
+    {
+     "input": "opt4; A (0,0)+t(2,0), B (0,10)+t(0,-1)",
+     "expected": "D^2 = 5t^2-20t+100; t = 2; D_min = 4*sqrt(5); A (4,0), B (0,8)"
+    },
+    {
+     "input": "opt3; r=(1,2,3)+t(2,0,-1), P(5,2,1)",
+     "expected": "t = 2 from x and z, y: 2 = 2; at P when t = 2"
+    },
+    {
+     "input": "opt6; speed 10, direction (3,4)",
+     "expected": "v = (6,8)"
+    }
+   ]
+  },
+  {
+   "id": "plane_eq",
+   "menu_label": "Plane equation",
+   "syllabus_ref": "AHL 3.17 r = a + lambda b + mu c, r.n = a.n, ax+by+cz=d (3 points, point+normal, containing lines)",
+   "inputs": [
+    "Option 1)3 points 2)point+normal 3)point+2 dirs 4)line+point 5)two lines 6)Cartesian->forms / P on plane",
+    "points / vectors",
+    "Cartesian ax+by+cz=d (opt 6)",
+    "test point P (opt 6) [none]"
+   ],
+   "steps": [
+    "[1] AB = ({..}), AC = ({..})",
+    "[1/3/4/5] n = AB x AC = ({minor1}, {minor2}, {minor3}) = ({n1},{n2},{n3})",
+    "[scaled] n parallel to ({n1'},{n2'},{n3'})",
+    "r.n = a.n:  ({a1})({n1}) + ({a2})({n2}) + ({a3})({n3}) = {d}",
+    "r.({n1},{n2},{n3}) = {d}",
+    "{n1}x + {n2}y + {n3}z = {d}",
+    "[1/3] r = ({a}) + t({b}) + s({c})",
+    "[4] AP = P - a = ({..});  n = b x AP",
+    "[5] intersecting: n = b1 x b2   | parallel: n = b1 x (a2 - a1)   | skew: no plane",
+    "[6] n = ({a},{b},{c}); point ({..})",
+    "[6] P: {lhs value} = {d} true => P on plane   | false => not on plane",
+    "ANS: {n1}x + {n2}y + {n3}z = {d}"
+   ],
+   "giac_calls": [
+    "simplify(({b1})-({a1}))",
+    "simplify(({u2})*({v3})-({u3})*({v2}))",
+    "cross([{u}],[{v}])",
+    "gcd({n1},gcd({n2},{n3}))",
+    "simplify(({a1})*({n1})+({a2})*({n2})+({a3})*({n3}))",
+    "diff({E},x)",
+    "subst({E},[x,y,z],[0,0,0])",
+    "simplify({E}-(({a})*x+({b})*y+({c})*z-({d})))",
+    "simplify(subst({lhs},[x,y,z],[{p1},{p2},{p3}]))"
+   ],
+   "python_logic": "Every route reduces to (point a, normal n). n by the vec_ops cross-product routine with printed minors; zero n -> 'Points collinear / directions parallel: no unique plane'. If all n_i are integers, divide by gcd and make the first nonzero component positive (print 'n parallel to'). d = a.n printed term by term. Print r.n = d and Cartesian; vector form when two directions known. Check every given point satisfies the Cartesian equation (S=='0') before ANS. Option 4: AP; b x AP = 0 -> 'P on line: plane not unique'. Option 5: line_ops relationship routine -> intersecting n=b1 x b2, parallel n=b1 x (a2-a1), skew 'no plane contains both'. Option 6: E=lhs-(rhs); n_i=S(diff(E,var)); d=-S(subst(E,[x,y,z],[0,0,0])); linearity check; a point: first variable with nonzero coefficient = d/coef, others 0; two in-plane directions = n x i, n x j (or k) choosing nonzero ones -> vector form; optional point test by substitution.",
+   "scope_limits": "3D only. Degenerate input (collinear points, zero normal) -> message and return to menu.",
+   "tests": [
+    {
+     "input": "opt1; A(1,0,0), B(0,2,0), C(0,0,3)",
+     "expected": "AB = (-1,2,0), AC = (-1,0,3), n = (6,3,2); 6x+3y+2z = 6"
+    },
+    {
+     "input": "opt2; point (1,-1,2), n = (2,3,-1)",
+     "expected": "d = 2-3-2 = -3; 2x+3y-z = -3"
+    },
+    {
+     "input": "opt4; line (1,0,0)+t(0,1,0), point (0,0,1)",
+     "expected": "AP = (-1,0,1), n = (1,0,1); x + z = 1"
+    },
+    {
+     "input": "opt6; 2x-y+2z=4, P(1,0,1)",
+     "expected": "n = (2,-1,2); 2(1)-0+2(1) = 4 true: P on plane"
+    }
+   ]
+  },
+  {
+   "id": "plane_int",
+   "menu_label": "Plane intersect",
+   "syllabus_ref": "AHL 3.18 intersections line-plane, two planes, three planes (point/line/none); angle line-plane, angle plane-plane",
+   "inputs": [
+    "Option 1)line-plane 2)angle line-plane 3)angle 2 planes 4)2 planes->line 5)3 planes 6)foot/dist/reflect",
+    "line (get_line)",
+    "plane(s) (get_plane: Cartesian / point+normal / 3 points)",
+    "point P (opt 6)",
+    "Deg? [n]"
+   ],
+   "steps": [
+    "[1] ({n1})({a1} + {b1}t) + ({n2})({a2} + {b2}t) + ({n3})({a3} + {b3}t) = {d}",
+    "[1] {k}t + {c} = {d}  =>  t = {t}",
+    "[1] P = ({x},{y},{z})",
+    "[1 0t = 0] line lies in the plane   | [0t = k] line parallel to plane: no intersection",
+    "[2] sin theta = |b.n|/(|b||n|) = |{bn}|/({mb}{mn}) = {s}",
+    "[2] theta = arcsin({s}) = {theta}",
+    "[3] cos theta = |n1.n2|/(|n1||n2|) = {c}",
+    "[3] theta = arccos({c}) = {theta}",
+    "[4] direction = n1 x n2 = ({d1},{d2},{d3})",
+    "[4] let z = 0: {eq1}, {eq2}  =>  x = {x}, y = {y}",
+    "[4] r = ({x},{y},0) + t({d1},{d2},{d3})",
+    "[4 n1 x n2 = 0] planes parallel   | coincident",
+    "[5] det = {det} != 0 => unique point   | det = 0",
+    "[5] [{row1} | {d1}] / [{row2} | {d2}] / [{row3} | {d3}]",
+    "[5] R2 -> R2 - ({f})R1:  [..]",
+    "[5] R3 -> R3 - ({f})R2:  [..]",
+    "[5] z = {z}, y = {y}, x = {x}",
+    "[5 0 = 0 row] let z = t: r = ({..}) + t({..})  (planes meet in a line)",
+    "[5 0 = k row] inconsistent: no common point ({parallel planes | triangular prism})",
+    "[6] line through P along n: r = P + t n",
+    "[6] t = {t}; foot F = ({..}); distance = |PF| = {dist}; reflection P' = 2F - P = ({..})",
+    "ANS: {result}"
+   ],
+   "giac_calls": [
+    "expand(({n1})*(({a1})+({b1})*t)+({n2})*(({a2})+({b2})*t)+({n3})*(({a3})+({b3})*t))",
+    "solve({eq}={d},t)",
+    "simplify(({a1})+({b1})*({t}))",
+    "simplify(asin(abs({bn})/(({mb})*({mn}))))",
+    "simplify(acos(abs({nn})/(({m1})*({m2}))))",
+    "cross([{n1}],[{n2}])",
+    "linsolve([{e1},{e2}],[x,y])",
+    "det([[{r1}],[{r2}],[{r3}]])",
+    "normal(({ai})/({ak}))",
+    "simplify(({rij})-({f})*({rkj}))",
+    "linsolve([{e1},{e2},{e3}],[x,y,z])",
+    "rref([[{R1}],[{R2}],[{R3}]])",
+    "solve({det}=0,k)",
+    "evalf({e})"
+   ],
+   "python_logic": "get_plane() -> (n,d) from Cartesian (diff/subst parse), point+normal, or 3 points (plane_eq routines, briefly printed). Option 1: substitute parametric line into n.r, expand -> k t + c (k = S(diff), c = S(subst t=0)); k==0: c==d -> 'line in plane' else 'parallel'; else t=(d-c)/k and point. Option 2: theta = arcsin(|b.n|/(|b||n|)) (angle with normal, complement). Option 3: acute via |n1.n2|. Option 4: dir = n1 x n2 (zero -> compare scaled d: coincident/parallel); coordinate set to 0 = first of z, y, x whose removal leaves a nonzero 2x2 determinant; linsolve 2x2; vector equation. Option 5: augmented 3x4 string matrix; det printed. Fixed-loop elimination: for col in 0..2 (max 3 pivot attempts): pivot = first row r>=current with S(M[r][col])!='0' (swap printed 'R1 <-> R2'); for each lower row f=N(M[r][col]/M[p][col]); if f!='0' replace entries S(M[r][j]-f*M[p][j]) and print the row op and new row. Classification: zero coefficient row with rhs!=0 -> no solution, then pairwise normal-parallel test -> 'two parallel planes' or 'triangular prism (no common point)'; one zero row with rhs 0 -> free variable = t, back-substitute with linsolve on remaining rows treating it as parameter, print r = p + t d; two zero rows -> 'planes coincide'; else back-substitution z, y, x (S each). Cross-check with linsolve. If input contains k: solve(det=0,k) first, then analyse each k (bounded by root count). Option 6: line P + t n, option-1 routine, foot F, distance |t||n|, reflection 2F-P.",
+   "scope_limits": "3D linear objects only; at most one parameter k. Non-simplifiable symbolic pivots -> print rref() result from G and stop.",
+   "tests": [
+    {
+     "input": "opt1; line (1,2,3)+t(1,-1,2), plane x+y+z=12",
+     "expected": "(1+t)+(2-t)+(3+2t) = 12, 6+2t = 12, t = 3, P = (4,-1,9)"
+    },
+    {
+     "input": "opt2; line dir (1,2,2), plane z=0",
+     "expected": "sin theta = 2/3, theta = arcsin(2/3) = 0.730 rad (41.8 deg)"
+    },
+    {
+     "input": "opt4; x+y+z=6, x-y+2z=3",
+     "expected": "direction (3,-1,-2); z=0: x = 9/2, y = 3/2; r = (9/2,3/2,0)+t(3,-1,-2)"
+    },
+    {
+     "input": "opt5; x+y+z=6, 2x-y+z=3, x+2y-z=2",
+     "expected": "det = 7 != 0; unique point (1,2,3)"
+    }
+   ]
+  }
+ ],
+ "not_automatable": [
+  "Proofs and derivations: proving the sine/cosine rules, deriving compound/double-angle formulae, geometric vector proofs (e.g. show the diagonals of a rhombus are perpendicular). These need a written argument, not a computation; the identity solver only gives an algebraic LHS=RHS chain.",
+  "Modelling from context: bearings, angles of elevation/depression, choosing the right triangle in a 3D diagram, setting coordinates on a cuboid or pyramid, turning a ship/plane story into r = a + tv. The student has to supply the sides, angles, coordinates or vectors.",
+  "Sketching graphs of sin/cos/tan, sec/cosec/cot and arcsin/arccos/arctan (shape, asymptotes drawn, labelled axes). The solver gives key features and points but cannot draw the sketch on paper.",
+  "Graphical or interpretive questions: 'how many solutions', justifying from a graph, interpreting tide or Ferris-wheel models in context, commenting on whether a model is reasonable.",
+  "Explaining the ambiguous case geometrically or drawing both triangles. The solver gives both solutions but no diagram or reasoning text.",
+  "General solutions of trig equations. The 2021 AA guide explicitly says they are not required, so the solver does not produce them.",
+  "'Hence' or 'show that' chains that depend on an earlier result or a set target form. Each part must be keyed in separately and linked by the student.",
+  "a sin x + b cos x = c with c not 0 (R sin(x+a) form) is not in the AA HL guide, so only the GDC numerical fallback is given.",
+  "Conceptual or definitional items: the unit-circle definition of trig ratios, why tan(pi/2) is undefined, stating the domains and ranges of the inverse trig functions in words, explaining what skew lines are."
+ ],
+ "unverified_giac": [
+  "trigsin(e) / trigcos(e) / trigtan(e): names and exact Pythagorean-rewrite behaviour UNVERIFIED (fallback: Python string rewrite sin(A)^2 -> (1-cos(A)^2) then simplify)",
+  "tan2sincos(e): UNVERIFIED (fallback: Python calls() replacement tan(A) -> (sin(A)/cos(A)))",
+  "tsimplify(e): exists, but its output form (exp/i) is unpredictable; used only as a zero test",
+  "fsolve(f=0,x=a..b) interval syntax: UNVERIFIED (fallback: Python bisection on evalf(subst(f,x=..)), 40 iterations)",
+  "seq(expr,j,0,120) argument order: UNVERIFIED (fallback: Python loop of evalf(subst()) calls)",
+  "texpand(cos(2*x)) output form (2*cos(x)^2-1 vs cos(x)^2-sin(x)^2): UNVERIFIED; solvers print their own formula text and use texpand only for checking",
+  "Automatic exact results of asin/acos/atan at standard values (acos(-1/2)->2*pi/3, atan(sqrt(3)/3)->pi/6, asin(sqrt(2)/2)->pi/4): UNVERIFIED for every case; the isx() test falls back to 3 s.f.",
+  "Simplification of cos(asin(4/5)) -> 3/5 and of texpand(subst(sin(p+q),[p,q],[..])) to surd form: UNVERIFIED",
+  "normal()/simplify() rationalising surd denominators (1/sqrt(5) -> sqrt(5)/5): UNVERIFIED",
+  "linsolve on under-determined systems returning the free variable as a parameter: UNVERIFIED",
+  "det([[..],[..],[..]]) and rref([[..]]) nested-list input and output format: UNVERIFIED (parse_list may need a two-level parse)",
+  "solve(poly=0,u) output format in KhiCAS ('[..]' vs 'list[..]' vs a sequence) and real-roots-only default: UNVERIFIED",
+  "gcd(a,gcd(b,c)) on negative or non-integer components: UNVERIFIED (only applied when all are integers)",
+  "subst(e,[x,y,z],[v1,v2,v3]) list form and subst(sin(p+q),[p,q],[..]): UNVERIFIED (fallback: nested single subst calls)",
+  "evalf(e) returning a decimal string that Python float() accepts (exponent format, digits): UNVERIFIED",
+  "Display of the degree sign and lambda/mu glyphs on the KhiCAS console: UNVERIFIED (use 'deg' and t/s)"
+ ]
+}

@@ -1,0 +1,26 @@
+# ibsetup: copy name.py.tns -> name.py so KhiCAS import finds the app
+import sys,gc
+D=None
+for d in ('','/documents/Xcas/','/documents/ndless/Xcas/','/documents/ndless/','/documents/'):
+ try:
+  open(d+'ibcore.py.tns').close()
+  D=d
+  break
+ except:
+  pass
+if D is None:
+ print('ibcore.py.tns not found')
+else:
+ L='main ibcore ibalg ibalg2 ibapp ibarea ibcpx ibcurve ibdiff ibdist ibfun ibfun2 ibfun3 ibint iblim ibode ibprob ibrv ibstat ibtrig ibtrig2 ibtrig3 ibvec ibvec2'.split()
+ for n in L:
+  f=open(D+n+'.py.tns')
+  s=f.read()
+  f.close()
+  f=open(D+n+'.py','w')
+  f.write(s)
+  f.close()
+  s=None
+  gc.collect()
+ if D not in sys.path:
+  sys.path.append(D)
+ print('ok: %d files in %s'%(len(L),D or 'current folder'))

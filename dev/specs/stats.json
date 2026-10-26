@@ -1,0 +1,823 @@
+{
+ "solvers": [
+  {
+   "id": "data_summary",
+   "menu_label": "Data summary",
+   "syllabus_ref": "4.1 outliers (1.5 IQR); 4.2 freq tables, cum freq, median, quartiles, percentiles, IQR, box plot values; 4.3 mean, mode, grouped mean (mid-interval), sd and variance",
+   "inputs": [
+    "Type 1=raw 2=freq 3=grouped [1]",
+    "[1] Data x1,x2,..: ",
+    "[2] Values x: ",
+    "[2] Freqs f: ",
+    "[3] Class bounds b0,b1,..,bk: ",
+    "[3] Freqs f1..fk: ",
+    "Percentile p (0=skip) [0]"
+   ],
+   "steps": [
+    "n = {n}",
+    "[1] Sorted: {up to 8 values per line}",
+    "[1] Sum x = {Sx}",
+    "[2] Sum fx = {Sfx}",
+    "[3] Mid-points: {m1},{m2},..",
+    "[3] Sum fm = {Sfm}",
+    "mean = {Sx|Sfx|Sfm}/{n}",
+    "     = {mean_exact} ({mean_3sf})",
+    "[n odd] median = ({n}+1)/2 th = {med}",
+    "[n even] median = ({xa}+{xb})/2 = {med}",
+    "Q1 = median of lower half = {Q1}",
+    "Q3 = median of upper half = {Q3}",
+    "IQR = Q3 - Q1 = {Q3} - {Q1} = {IQR}",
+    "Q1 - 1.5 IQR = {LF}",
+    "Q3 + 1.5 IQR = {UF}",
+    "Outliers: {list} | Outliers: none",
+    "Box: min {mn}, Q1 {Q1}, med {med}, Q3 {Q3}, max {mx}",
+    "[outliers] Whiskers: {lo} to {hi}",
+    "mode = {mode list} | [3] modal class: {bi}-{bj}",
+    "[3] Cum freq: {cf1},{cf2},..",
+    "[3] median ~ L + (n/2 - CF)/f * w",
+    "[3]        = {L} + ({t} - {CF})/{f}*{w} = {med} (est)",
+    "[3] Q1, Q3 same with n/4, 3n/4 (est)",
+    "[p>0] P{p}: position {p}n/100 = {t} -> {val}",
+    "[1|2] Sum x^2 = {Sxx} (or Sum fx^2)",
+    "var = Sum x^2/n - mean^2",
+    "    = {Sxx}/{n} - ({mean})^2 = {var_exact}",
+    "sd = sqrt({var_exact}) = {sd_3sf}",
+    "ANS: mean={mean}, median={med}, Q1={Q1}, Q3={Q3}, IQR={IQR}, sd={sd_3sf}"
+   ],
+   "giac_calls": [
+    "simplify(({x1}+{x2}+...+{xn})/{n})",
+    "simplify(dot([{f..}],[{x..}])/{n})",
+    "evalf({expr})",
+    "simplify(({xa}+{xb})/2)",
+    "simplify({Q3}-({Q1}))",
+    "simplify({Q1}-3/2*({IQR}))",
+    "simplify({Q3}+3/2*({IQR}))",
+    "simplify(({b_i}+{b_i+1})/2)",
+    "simplify(dot([{f..}],[{x^2..}])/{n}-({mean})^2)",
+    "sqrt({var})",
+    "simplify({L}+({t}-{CF})/({f})*({w}))"
+   ],
+   "python_logic": "AREA HELPERS (pure Python, shared by all stats solvers): num(s)=float(G('evalf('+s+')')); ex(s)=G('simplify('+s+')'); sf3(v) formats a float to 3 s.f. with bounded scaling loops (no '%g' trailing-zero loss, e.g. 0.120); z4(v) 4 d.p. for z-values; isdec(list) True if any input contains '.', then answers shown as decimals (exact if terminating, else 3 s.f.), otherwise exact + (3 s.f.). Every G() inside try/except -> out('Error: '+what); return. THIS SOLVER: parse with split_top(s,','). Sorting uses python floats (fv=[num(t)]) with sorted(range(n), key=fv index) while keeping original strings for exact display. Quartiles use the TI/IB 'median of halves' rule: h=n//2, lower=positions 1..h, upper=positions n-h+1..n (median excluded when n odd). For freq tables do NOT expand: kth(k) walks the cumulative frequency list (bounded by number of values) to return the k-th ordered value; median/quartile positions computed as above. Mode: dict count (raw) or max f (freq), all ties printed. Outliers: compare float values with fences; whiskers = min/max of non-outliers. Grouped: mids m_i=(b_i+b_{i+1})/2, cumulative list, class containing target t=n/2, n/4, 3n/4, p*n/100 found by bounded loop, linear interpolation, labelled (est). Variance via the computational formula with exact strings through dot(); sd printed as expression then 3 s.f. (technology quantity). Long lists printed 8 per line through out().",
+   "scope_limits": "Population sd sigma_n only (IB convention); sample s_(n-1) not shown. Raw lists up to ~200 values (string length/memory); grouped quartiles/percentiles are interpolation estimates, not graph readings. Non-numeric entries or mismatched x/f lengths -> 'Error: list lengths' and return. If G fails on long sums, fall back to python float sums and print 3 s.f. only.",
+   "tests": [
+    {
+     "input": "raw: 2,4,4,5,7,9,10",
+     "expected": "mean=41/7 (5.86), median=5, Q1=4, Q3=9, IQR=5, fences -7/2 and 33/2, no outliers, mode=4, var=356/49, sd=2sqrt(89)/7=2.70"
+    },
+    {
+     "input": "raw: 1,3,5,6,8,30",
+     "expected": "median=11/2, Q1=3, Q3=8, IQR=5, Q3+1.5IQR=31/2, outlier 30, whiskers 1 to 8, mean=53/6"
+    },
+    {
+     "input": "freq: x=1,2,3,4 f=3,5,8,4",
+     "expected": "n=20, mean=53/20=2.65, median=3, Q1=2, Q3=3, IQR=1, var=371/400, sd=sqrt(371)/20=0.963"
+    },
+    {
+     "input": "grouped: bounds 0,10,20,30 f=4,6,10",
+     "expected": "mids 5,15,25, mean=360/20=18, cum freq 4,10,20, median est=10+(10-4)/6*10=20, modal class 20-30"
+    }
+   ]
+  },
+  {
+   "id": "mean_transform",
+   "menu_label": "Mean/transform",
+   "syllabus_ref": "4.3 effect of constant changes (adding/multiplying data); unknown value or frequency from given mean; combined mean; 4.14 E(aX+b), Var(aX+b)",
+   "inputs": [
+    "1 aX+b  2 unknown from mean  3 combine groups  4 add/remove value [1]",
+    "[1] mean (or E(X)): ",
+    "[1] sd (blank=skip): ",
+    "[1] var (blank=skip): ",
+    "[1] median, IQR (blank=skip): ",
+    "[1] a: [1]",
+    "[1] b: [0]",
+    "[2] Values x (may use k): ",
+    "[2] Freqs f (blank=all 1): ",
+    "[2] Given mean: ",
+    "[3] n1, mean1: ",
+    "[3] n2, mean2: ",
+    "[4] n, mean: ",
+    "[4] value (+add / -remove): "
+   ],
+   "steps": [
+    "[1] new mean = a(mean) + b",
+    "[1]          = {a}({m}) + {b} = {m2}",
+    "[1] new sd = |a| sd = |{a}|({s}) = {s2}",
+    "[1] new var = a^2 var = ({a})^2({v}) = {v2}",
+    "[1 med] new median = {a}({med}) + {b} = {med2}",
+    "[1 IQR] new IQR = |{a}|({iqr}) = {iqr2}",
+    "[1] ANS: mean = {m2}, sd = {s2}",
+    "[2] Sum fx = {Sfx}",
+    "[2] Sum f = {Sf}",
+    "[2] Sum fx / Sum f = {mean}",
+    "[2] ({Sfx})/({Sf}) = {mean}",
+    "[2] {linear eq after clearing denominators}",
+    "[2] {var} = {root}",
+    "[2] ANS: {var} = {root}",
+    "[3] Sum = n1 m1 + n2 m2 = {n1}({m1}) + {n2}({m2}) = {T}",
+    "[3] mean = {T}/({n1}+{n2}) = {M}",
+    "[3] ANS: mean = {M}",
+    "[4] Sum = n(mean) = {n}({m}) = {S}",
+    "[4] new mean = ({S} +/- {v})/({n} +/- 1) = {M}",
+    "[4] ANS: mean = {M}"
+   ],
+   "giac_calls": [
+    "simplify(({a})*({m})+({b}))",
+    "simplify(abs({a})*({s}))",
+    "simplify(({a})^2*({v}))",
+    "sqrt({v})",
+    "normal({Sfx})",
+    "normal({Sf})",
+    "normal(({Sfx})-({mean})*({Sf}))",
+    "solve(({Sfx})/({Sf})=({mean}),{var})",
+    "simplify(({n1})*({m1})+({n2})*({m2}))",
+    "simplify(({T})/(({n1})+({n2})))"
+   ],
+   "python_logic": "Sub-menu via ask(). [1] if only sd given -> var=G('(sd)^2'); if only var -> sd=G('sqrt(var)'); print 'sd unchanged' line instead of formula when a=1. [2] Unknown symbol = first alphabetic token in x or f strings that is not a function name (sqrt, ln, exp, sin, cos, tan, e, pi); exactly one allowed. Build Sfx='x1*f1+...'; Sf='f1+...'; print both via normal(); show cleared equation normal(Sfx - mean*Sf)=0; solve; parse_list; if unknown is a frequency keep non-negative integer roots only (else print all roots and 'check'). [3]/[4] straight formula lines. Uses area helpers ex/sf3/isdec.",
+   "scope_limits": "One unknown in [2]; two unknowns need a second condition -> message 'Use Discrete RV / 2 eq' and return. Transformations are linear only (aX+b). If solve returns [] -> 'No solution: check data'.",
+   "tests": [
+    {
+     "input": "[1] mean 12, sd 3, a=2, b=-5",
+     "expected": "new mean 19, new sd 6, new var 36"
+    },
+    {
+     "input": "[2] x=3,7,k,10 f blank, mean 6",
+     "expected": "(20+k)/4=6, k=4"
+    },
+    {
+     "input": "[2] x=1,2,3 f=2,k,4, mean 2.2",
+     "expected": "(14+2k)/(6+k)=2.2, 0.8=0.2k, k=4"
+    },
+    {
+     "input": "[3] n1=10 m1=8; n2=15 m2=13",
+     "expected": "Sum=275, mean=275/25=11"
+    }
+   ]
+  },
+  {
+   "id": "regression",
+   "menu_label": "Regression/r",
+   "syllabus_ref": "4.4 Pearson r, regression line y on x, use for prediction, interpret a and b; 4.10 regression line x on y",
+   "inputs": [
+    "x list: ",
+    "y list: ",
+    "Line 1=y on x 2=x on y 3=both [1]",
+    "Predict 1=y from x 2=x from y 0=skip [0]",
+    "value: ",
+    "Interpret a,b? 1/0 [0]"
+   ],
+   "steps": [
+    "n = {n}",
+    "xbar = {Sx}/{n} = {xbar}",
+    "ybar = {Sy}/{n} = {ybar}",
+    "Sxx = Sum x^2 - n xbar^2 = {Sxx}",
+    "Syy = Sum y^2 - n ybar^2 = {Syy}",
+    "Sxy = Sum xy - n xbar ybar = {Sxy}",
+    "r = Sxy/sqrt(Sxx Syy)",
+    "  = {Sxy}/sqrt({Sxx}*{Syy})",
+    "  = {r_exact} = {r_3sf}",
+    "{strong|moderate|weak} {positive|negative} linear correlation",
+    "[y on x] b = Sxy/Sxx = {b}",
+    "[y on x] a = ybar - b xbar = {a}",
+    "[y on x] y = {b_3sf}x + {a_3sf}",
+    "[x on y] d = Sxy/Syy = {d}",
+    "[x on y] c = xbar - d ybar = {c}",
+    "[x on y] x = {d_3sf}y + {c_3sf}",
+    "[predict] y = {b}({x0}) + {a} = {y0_3sf}",
+    "[x0 outside data range] (extrapolation - unreliable)",
+    "[interpret] b: y changes by {b_3sf} per unit increase in x",
+    "[interpret] a: value of y when x = 0",
+    "ANS: r = {r_3sf}; y = {b_3sf}x + {a_3sf} [; x = {d_3sf}y + {c_3sf}]"
+   ],
+   "giac_calls": [
+    "simplify(sum([{x..}])/{n})",
+    "simplify(dot([{x..}],[{x..}])-{n}*({xbar})^2)",
+    "simplify(dot([{y..}],[{y..}])-{n}*({ybar})^2)",
+    "simplify(dot([{x..}],[{y..}])-{n}*({xbar})*({ybar}))",
+    "simplify(({Sxy})/sqrt(({Sxx})*({Syy})))",
+    "evalf({r})",
+    "simplify(({Sxy})/({Sxx}))",
+    "simplify(({ybar})-({b})*({xbar}))",
+    "simplify(({Sxy})/({Syy}))",
+    "simplify(({xbar})-({d})*({ybar}))",
+    "evalf(({b})*({x0})+({a}))"
+   ],
+   "python_logic": "split_top lists; require equal length n>=3 else error. All sums exact through dot() so integer data give exact r (e.g. sqrt(15)/5) before 3 s.f. Strength label from |r| (>=0.75 strong, >=0.5 moderate, else weak; r=0 'no linear correlation') printed as one line only. Prediction uses the unrounded a,b (or c,d for x from y, per 4.10 rule: predict x from y with x on y line). Extrapolation flag by comparing float x0 with min/max of the data. Interpretation lines only if asked (student rule: no unsolicited explanation).",
+   "scope_limits": "Linear regression only (non-linear/exponential models are AI, not AA). Sxx=0 or Syy=0 -> 'Error: no variation'. Lists over ~40 points may overflow the command string -> fall back to python float sums and print 3 s.f. values.",
+   "tests": [
+    {
+     "input": "x=1,2,3,4,5 y=2,4,5,4,5, predict y at x=3.5",
+     "expected": "Sxx=10, Syy=6, Sxy=6, r=sqrt(15)/5=0.775, y=0.6x+2.2, x=y-1, y(3.5)=4.3"
+    },
+    {
+     "input": "x=1,2,3 y=3,5,7 both lines",
+     "expected": "r=1, y=2x+1, x=0.5y-0.5"
+    }
+   ]
+  },
+  {
+   "id": "prob_rules",
+   "menu_label": "Prob rules/Venn",
+   "syllabus_ref": "4.5 complementary events, expected occurrences; 4.6 Venn, P(AuB)=P(A)+P(B)-P(AnB), mutually exclusive, conditional, independence; 4.11 formal conditional P(A|B)=P(AnB)/P(B), test P(AnB)=P(A)P(B)",
+   "inputs": [
+    "1 two events  2 regions with x  3 two-way table [1]",
+    "[1] P(A) (blank=unknown): ",
+    "[1] P(B): ",
+    "[1] P(AnB): ",
+    "[1] P(AuB): ",
+    "[1] P(A|B): ",
+    "[1] P(B|A): ",
+    "[1] P(neither): ",
+    "[1] Given 0=none 1=indep 2=mut.excl [0]",
+    "[1] Extra 1=P(A|B') 2=P(B|A') 0=none [0]",
+    "[2] Region values (may use x): ",
+    "[2] Total (1 or N) [1]: ",
+    "[2] Wanted regions (indices) / given regions (blank): ",
+    "[3] Row i counts (up to 3 rows): ",
+    "[3] Query e.g. r1|c2, r1nc2, r1uc2: "
+   ],
+   "steps": [
+    "[1 per rule fired] P(AuB) = P(A) + P(B) - P(AnB)",
+    "        {u} = {a} + {b} - {c}  ->  P({X}) = {val}",
+    "        P(A|B) = P(AnB)/P(B)",
+    "        {g} = {c}/{b}  ->  P({X}) = {val}",
+    "        P(B|A) = P(AnB)/P(A)",
+    "        P(neither) = 1 - P(AuB)",
+    "        [indep] P(AnB) = P(A)P(B)",
+    "        [mut.excl] P(AnB) = 0",
+    "[1 system] Solve simultaneously:",
+    "        {eq1}",
+    "        {eq2}",
+    "        => {var} = {val}, ...",
+    "[1] P(A') = 1 - P(A) = {..}",
+    "[1] Venn: A only = P(A) - P(AnB) = {..}",
+    "[1]       B only = P(B) - P(AnB) = {..}",
+    "[1]       neither = 1 - P(AuB) = {..}",
+    "[1 test] P(A)P(B) = {a}({b}) = {ab}",
+    "[1 test] P(AnB) = {c} {=|!=} P(A)P(B)",
+    "[1 test] => A, B {independent|not independent}",
+    "[1 test] P(AnB) {=|!=} 0 => {mutually exclusive|not mutually exclusive}",
+    "[1 extra] P(A|B') = (P(A) - P(AnB))/(1 - P(B)) = {..}",
+    "[2] {r1} + {r2} + ... = {T}",
+    "[2] {simplified eq}",
+    "[2] x = {x}",
+    "[2] P = ({sum wanted})/{T} = {p}  |  P(W|G) = n(WnG)/n(G) = {p}",
+    "[3] Totals: rows {R}, cols {C}, N = {N}",
+    "[3] P(r1|c2) = n(r1nc2)/n(c2) = {k}/{m} = {p}",
+    "ANS: {list of requested probabilities}"
+   ],
+   "giac_calls": [
+    "exact({decimal})",
+    "solve({u}=({a})+({b})-({c}),{var})",
+    "solve(({g})*({b})=({c}),{var})",
+    "solve(({h})*({a})=({c}),{var})",
+    "solve({w}=1-({u}),{var})",
+    "solve([{eq1},{eq2},...],[{vars}])",
+    "simplify(({a})*({b}))",
+    "simplify(1-({a}))",
+    "simplify((({a})-({c}))/(1-({b})))",
+    "normal({r1}+{r2}+...)",
+    "solve({sum}={T},x)",
+    "evalf({expr})"
+   ],
+   "python_logic": "[1] Variables a,b,c,u,g,h,w; blank -> unknown; user values may contain a symbol x (treated as unknown). Decimal inputs are converted with exact() so arithmetic is exact; display uses isdec rule. Rules R1 u=a+b-c, R2 g*b=c, R3 h*a=c, R4 w=1-u, R5 c=a*b (if indep), R6 c=0 (if mut.excl). Phase 1: bounded loop (max 6 passes): for each rule, if exactly one of its variables is unknown, print the rule formula and the substituted line, G solve for that variable, keep roots in [0,1], mark known. Phase 2: if unknowns remain, print 'Solve simultaneously:' with all rules containing unknowns, one G('solve([...],[...])'), keep solution sets whose values lie in [0,1]. Then derived lines (complements, Venn regions). Independence/ME tests printed only when relation not given and a,b,c known; equality decided by G('simplify(c-a*b)')=='0'. Consistency check: c<=min(a,b), u>=max(a,b), all in [0,1], else 'Inconsistent data'. [2] regions list (supports 3-set Venn), solve sum=T, then wanted/given conditional by index lists. [3] up to 3x3 counts; row/col totals in python, fractions via simplify.",
+   "scope_limits": "Two events in mode [1] (three events handled only as region lists in [2]). One symbolic unknown per value. If both phase 1 and phase 2 fail -> 'Not enough information'. Non-probability values (outside [0,1]) rejected.",
+   "tests": [
+    {
+     "input": "[1] P(A)=1/2, P(B)=2/5, P(AuB)=7/10",
+     "expected": "P(AnB)=1/5, P(A|B)=1/2, P(B|A)=2/5, neither=3/10, P(A)P(B)=1/5 => independent"
+    },
+    {
+     "input": "[1] P(A)=0.3, P(B)=0.5, P(B|A)=0.6",
+     "expected": "P(AnB)=0.18, P(AuB)=0.62, P(A|B)=0.36, P(A)P(B)=0.15 != 0.18 => not independent"
+    },
+    {
+     "input": "[1] P(B)=0.4, P(AuB)=0.7, independent",
+     "expected": "system: 0.7=a+0.4-c, c=0.4a => P(A)=0.5, P(AnB)=0.2"
+    },
+    {
+     "input": "[2] regions x,2x,3x,0.1 total 1; [3] rows 10,20 / 30,40 query r1|c2",
+     "expected": "6x+0.1=1, x=0.15 (3/20); P(r1|c2)=20/60=1/3"
+    }
+   ]
+  },
+  {
+   "id": "tree_bayes",
+   "menu_label": "Tree/Bayes",
+   "syllabus_ref": "4.6 tree diagrams, combined events; AHL 4.13 Bayes theorem (up to 3 events), total probability",
+   "inputs": [
+    "No. of first events (2/3) [2]",
+    "P(A1): ",
+    "P(A2) (blank=auto if last): ",
+    "[3] P(A3) (blank=auto): ",
+    "P(B|A1): ",
+    "P(B|A2): ",
+    "[3] P(B|A3): ",
+    "Find 1=P(B) 2=P(Ai|B) 3=P(Ai|B') [2]",
+    "i [1]",
+    "Known P(Ai|B) to solve for x (blank): "
+   ],
+   "steps": [
+    "[auto] P(A{m}) = 1 - {sum others} = {pm}",
+    "P(A1nB) = P(A1)P(B|A1)",
+    "        = {p1}({q1}) = {r1}",
+    "P(A2nB) = {p2}({q2}) = {r2}",
+    "[3] P(A3nB) = {p3}({q3}) = {r3}",
+    "P(B) = P(A1)P(B|A1) + P(A2)P(B|A2) [+ P(A3)P(B|A3)]",
+    "     = {r1} + {r2} [+ {r3}]",
+    "     = {PB}",
+    "[2] Bayes:",
+    "[2] P(Ai|B) = P(Ai)P(B|Ai)/P(B)",
+    "[2]        = {ri}/{PB}",
+    "[2]        = {ans} ({ans_3sf})",
+    "[3] P(B'|Ai) = 1 - P(B|Ai) = {qi'}",
+    "[3] P(B') = 1 - P(B) = {PB'}",
+    "[3] P(Ai|B') = P(Ai)P(B'|Ai)/P(B') = {ri'}/{PB'} = {ans}",
+    "[x] {ri}/{PB} = {given}",
+    "[x] {simplified eq}",
+    "[x] x = {root in [0,1]}",
+    "ANS: {P(B) | P(Ai|B) | P(Ai|B') | x}"
+   ],
+   "giac_calls": [
+    "exact({decimal})",
+    "simplify(1-({p1})-({p2}))",
+    "simplify(({pi})*({qi}))",
+    "simplify({r1}+{r2}+{r3})",
+    "simplify(({ri})/({PB}))",
+    "simplify(1-({qi}))",
+    "simplify(1-({PB}))",
+    "solve(({ri})/({PB})=({given}),x)",
+    "evalf({expr})"
+   ],
+   "python_logic": "m in {2,3}; bounded for i in range(m). Missing last prior auto = 1 - sum of others (printed). Validate priors sum to 1 via simplify(sum-1)=='0' else 'Priors must sum to 1'. Branch products, total probability, then requested Bayes quotient. If any input contains x and a known posterior is given, form the equation ri/PB = given, solve, keep roots in [0,1], then recompute PB with x substituted. Display per isdec rule (exact fraction + 3 s.f., or decimals).",
+   "scope_limits": "Max 3 first-stage events with a binary second stage (B / B'), which covers the AA HL Bayes limit. Deeper multi-stage trees with drawing -> use Draws (bag). Probabilities outside [0,1] -> error and return.",
+   "tests": [
+    {
+     "input": "m=2, P(A1)=0.3, P(B|A1)=0.02, P(B|A2)=0.05, find P(A1|B)",
+     "expected": "P(A2)=0.7, P(B)=0.006+0.035=0.041, P(A1|B)=0.006/0.041=6/41=0.146"
+    },
+    {
+     "input": "m=3, P=0.5,0.3,(0.2), P(B|Ai)=0.01,0.02,0.03, find P(A3|B)",
+     "expected": "P(B)=0.017, P(A3|B)=0.006/0.017=6/17=0.353"
+    },
+    {
+     "input": "m=2, P(A1)=1/4, P(B|A1)=2/3, P(B|A2)=1/3, find P(A1|B)",
+     "expected": "P(B)=1/6+1/4=5/12, P(A1|B)=2/5"
+    },
+    {
+     "input": "same as previous, find P(A1|B')",
+     "expected": "P(B')=7/12, P(A1nB')=1/12, P(A1|B')=1/7"
+    }
+   ]
+  },
+  {
+   "id": "bag_draws",
+   "menu_label": "Draws (bag)",
+   "syllabus_ref": "4.5 complement ('at least one'); 4.6 successive events with and without replacement, tree diagrams",
+   "inputs": [
+    "Colour counts e.g. 5,3: ",
+    "Labels [RBGY]: ",
+    "Draws d (<=4) [2]",
+    "Replace? 1=yes 0=no [0]",
+    "Event 1 sequence 2 exactly k 3 at least 1 4 all same 5 at least k [1]",
+    "[1] sequence e.g. RRB: ",
+    "[2,3,5] colour: ",
+    "[2,5] k: "
+   ],
+   "steps": [
+    "Total = {N}",
+    "[1] P({seq}) = {n1}/{N} x {n2}/{N-1} x ...",
+    "[1]         = {p}",
+    "[2] Arrangements: {seq1}, {seq2}, ... (<=6 listed)",
+    "[2] P({seqi}) = {product}",
+    "[2 all equal] P = {count} x {product}",
+    "[2]   = {p}",
+    "[3] P(at least 1 {c}) = 1 - P(no {c})",
+    "[3] P(no {c}) = {product}",
+    "[3]           = {p0}",
+    "[3] P = 1 - {p0} = {p}",
+    "[4] P(all same) = P({c1}..{c1}) + P({c2}..{c2}) + ...",
+    "[4]           = {t1} + {t2} + ... = {p}",
+    "[5] P(X>={k}) = P(X={k}) + ... + P(X={d})",
+    "[5]          = {pk} + ... = {p}",
+    "ANS: {p} ({p_3sf})"
+   ],
+   "giac_calls": [
+    "normal({n1}/{N}*{n2}/{N-1}*...)",
+    "normal({count}*({product}))",
+    "normal(1-({p0}))",
+    "normal({t1}+{t2}+...)",
+    "evalf({p})"
+   ],
+   "python_logic": "c colours (<=4), d draws (<=4) so at most 4^4=256 sequences. Enumerate with a single bounded loop idx in range(c**d), digits obtained by repeated %c and //c (no recursion). For each sequence copy counts, build the product string 'a/b*...' (decrement count and total when no replacement), test the event predicate, and store in a dict keyed by (numerator,denominator) python ints -> list of sequences. Print up to 6 matching sequences with their products; if all matches share one product print 'count x product' (mark-scheme form). 'At least 1' always printed by complement. 'At least k' groups exactly-j totals for j=k..d. Final sums simplified by G normal().",
+   "scope_limits": "<=4 colours, <=4 draws. Larger draws -> print the combination ratio C(..)C(..)/C(..) via comb() (without replacement) or redirect to Binomial (with replacement). Draw-until-first-success over unbounded trials not supported.",
+   "tests": [
+    {
+     "input": "5,3 RB d=2 no repl, sequence RR",
+     "expected": "5/8 x 4/7 = 5/14"
+    },
+    {
+     "input": "5,3 RB d=2 no repl, exactly 1 B",
+     "expected": "RB, BR: 2 x 15/56 = 15/28"
+    },
+    {
+     "input": "5,3 RB d=2 repl, at least 1 B",
+     "expected": "1 - (5/8)(5/8) = 39/64"
+    },
+    {
+     "input": "4,2 RB d=3 no repl, exactly 2 R",
+     "expected": "RRB,RBR,BRR: 3 x 1/5 = 3/5"
+    }
+   ]
+  },
+  {
+   "id": "discrete_rv",
+   "menu_label": "Discrete RV",
+   "syllabus_ref": "4.7 discrete random variables, sum of probabilities = 1, E(X), fair games; AHL 4.14 Var(X), E(aX+b), Var(aX+b)",
+   "inputs": [
+    "Form 1=table 2=P(X=x)=f(x) [1]",
+    "x values: ",
+    "[1] P values (may use k): ",
+    "[2] f(x) (with k): ",
+    "Extra 1=E(X)=v 2=fair game E=0 0=none [0]",
+    "[1] v: ",
+    "Query e.g. X>=2 (blank skip): ",
+    "a,b for aX+b (blank skip): "
+   ],
+   "steps": [
+    "[2] P(X={xi}) = f({xi}) = {pi}",
+    "[k] Sum P(X=x) = 1",
+    "[k] {p1} + {p2} + ... = 1",
+    "[k] {simplified eq}",
+    "[k] {var} = {root1}, {root2}",
+    "[k reject] {var} = {r} rejected (P<0 or P>1)",
+    "[k] {var} = {val}",
+    "[2 unknowns] {sum} = 1   (1)",
+    "[2 unknowns] {Sum xP} = {v}   (2)",
+    "[2 unknowns] => {u1} = {..}, {u2} = {..}",
+    "[fair] E(X) = 0",
+    "[fair] {x1}({p1}) + {x2}({p2}) + ... = 0",
+    "[fair] {var} = {val}",
+    "x : {x1}   {x2}   ...",
+    "P : {p1}   {p2}   ...",
+    "E(X) = Sum x P(X=x)",
+    "     = {x1}({p1}) + {x2}({p2}) + ...",
+    "     = {E}",
+    "E(X^2) = {x1}^2({p1}) + ... = {E2}",
+    "Var(X) = E(X^2) - [E(X)]^2",
+    "       = {E2} - ({E})^2 = {V}",
+    "sd = sqrt({V}) = {sd}",
+    "[query] P(X{op}{c}) = P(X={xi}) + ... = {pq}",
+    "[aX+b] E(aX+b) = aE(X) + b = {a}({E}) + {b} = {Eab}",
+    "[aX+b] Var(aX+b) = a^2 Var(X) = ({a})^2({V}) = {Vab}",
+    "ANS: {var} = {val}, E(X) = {E}, Var(X) = {V}"
+   ],
+   "giac_calls": [
+    "subst({f},x={xi})",
+    "normal({p1}+{p2}+...)",
+    "solve({sum}=1,{var})",
+    "evalf(subst({pi},{var}={root}))",
+    "solve([{sum}=1,{SumxP}=({v})],[{u1},{u2}])",
+    "solve({SumxP}=0,{var})",
+    "simplify(({x1})*({p1})+({x2})*({p2})+...)",
+    "simplify(({x1})^2*({p1})+...)",
+    "simplify({E2}-({E})^2)",
+    "sqrt({V})",
+    "simplify(({a})*({E})+({b}))",
+    "simplify(({a})^2*({V}))",
+    "evalf({expr})"
+   ],
+   "python_logic": "Lists <=12 values. Unknowns = alphabetic tokens (excluding sqrt, ln, exp, e, pi, trig names) found in P strings (and in x strings for fair games); 0, 1 or 2 allowed. 1 unknown in P: sum=1, solve, then validity filter loop over roots: every substituted P must satisfy 0<=P<=1 (evalf); print rejected roots. 2 unknowns: need Extra=1 (E given) -> solve system. Unknown in x values with Extra=2 -> E=0 equation (fair game). After substitution compute E, E(X^2), Var, sd. Query: parse operator (>=,<=,>,<,=) and number, select xi by float comparison, sum the matching P. Optional aX+b lines. Display per isdec rule.",
+   "scope_limits": "Finite support only (<=12 values); infinite discrete distributions are not in AA. Binomial questions -> Binomial solver. If no root is valid -> 'No valid k'. More than 2 unknowns -> 'Too many unknowns' and return.",
+   "tests": [
+    {
+     "input": "x=1,2,3,4 P=k,2k,3k,4k; a,b=2,1",
+     "expected": "10k=1, k=1/10, E(X)=3, E(X^2)=10, Var(X)=1, E(2X+1)=7, Var(2X+1)=4"
+    },
+    {
+     "input": "x=0,1,2 P=k^2,k,1/4",
+     "expected": "k^2+k-3/4=0, k=1/2 (k=-3/2 rejected), E(X)=1, E(X^2)=3/2, Var(X)=1/2"
+    },
+    {
+     "input": "fair game: x=w,-2 P=1/6,5/6",
+     "expected": "w/6-10/6=0, w=10"
+    },
+    {
+     "input": "x=1,2,3 P=p,q,0.2, E(X)=1.9",
+     "expected": "p+q=0.8, p+2q=1.3 => p=0.3, q=0.5; Var(X)=4.1-3.61=0.49"
+    }
+   ]
+  },
+  {
+   "id": "binomial_dist",
+   "menu_label": "Binomial",
+   "syllabus_ref": "4.8 binomial distribution B(n,p): P(X=r), cumulative probabilities, mean np, variance np(1-p); 4.5 expected number of occurrences; finding n or p",
+   "inputs": [
+    "n: ",
+    "p: ",
+    "1 P(X=r) 2 P(X<=r) 3 P(X<r) 4 P(X>=r) 5 P(X>r) 6 P(a<=X<=b) 7 mean/var 8 least n 9 find p [1]",
+    "[1-5] r: ",
+    "[6] a,b: ",
+    "[8] k for P(X>=k) [1]",
+    "[8] target c: ",
+    "[9] r, value of P(X=r): "
+   ],
+   "steps": [
+    "X ~ B({n}, {p})",
+    "[1] P(X=r) = C(n,r) p^r (1-p)^(n-r)",
+    "[1] P(X={r}) = C({n},{r})({p})^{r}({q})^{n-r}",
+    "[1]         = {C}({p})^{r}({q})^{n-r}",
+    "[1]         = {exact} = {p_3sf}",
+    "[2] P(X<={r}) = P(X=0) + ... + P(X={r})",
+    "[2 r<=2] = {term0} + {term1} + {term2}",
+    "[2]          = {p_3sf}",
+    "[3] P(X<{r}) = P(X<={r-1}) = {p_3sf}",
+    "[4] P(X>={r}) = 1 - P(X<={r-1})",
+    "[4]          = 1 - {c} = {p_3sf}",
+    "[5] P(X>{r}) = 1 - P(X<={r}) = 1 - {c} = {p_3sf}",
+    "[6] P({a}<=X<={b}) = P(X<={b}) - P(X<={a-1})",
+    "[6]   = {cb} - {ca} = {p_3sf}",
+    "[7] E(X) = np = {n}({p}) = {E}",
+    "[7] Var(X) = np(1-p) = {n}({p})({q}) = {V}",
+    "[7] sd = sqrt({V}) = {sd}",
+    "[8 k=1] P(X>=1) = 1 - ({q})^n > {c}",
+    "[8 k=1] ({q})^n < {1-c}",
+    "[8 k=1] n > ln({1-c})/ln({q})",
+    "[8 k=1] n > {val}",
+    "[8 k>=2] n={N-1}: P(X>={k}) = {pa} < {c}",
+    "[8 k>=2] n={N}: P(X>={k}) = {pb} >= {c}",
+    "[8] least n = {N}",
+    "[9] C({n},{r})p^{r}(1-p)^{n-r} = {v}",
+    "[9] p = {roots in (0,1)}",
+    "ANS: {result}"
+   ],
+   "giac_calls": [
+    "simplify(1-({p}))",
+    "comb({n},{r})",
+    "simplify(comb({n},{r})*({p})^({r})*(1-({p}))^({n}-{r}))",
+    "evalf({expr})",
+    "evalf(sum(comb({n},i)*({p})^i*(1-({p}))^({n}-i),i,0,{r}))",
+    "binomial_cdf({n},{p},{r})",
+    "simplify(({n})*({p}))",
+    "simplify(({n})*({p})*(1-({p})))",
+    "evalf(ln(1-({c}))/ln(1-({p})))",
+    "ceil({val})",
+    "solve(comb({n},{r})*p^{r}*(1-p)^({n}-{r})=({v}),p)"
+   ],
+   "python_logic": "q=simplify(1-p). Cumulative values computed exactly as a finite sum with sum() then evalf (binomial_cdf only as fallback, UNVERIFIED). Write the probability statement first, the cumulative identity (complement / shift of r) second, then the 3 s.f. value; the r<=2 case also shows individual terms. Exact answer shown when p is a fraction and the query is P(X=r) (e.g. 3/8). [8] k=1: logarithm inequality with sign reversal noted by printing the flipped inequality, then ceil. k>=2: bounded search n from k to 1000 using python float pmf recurrence (pmf(i+1)=pmf(i)*(n-i)/(i+1)*p/q) to find the first N; then confirm N-1 and N with G and print both lines. [9] solve, keep roots with 0<p<1 (evalf), print all valid roots. Expected occurrences (4.5) = mode 7 mean line.",
+   "scope_limits": "n<=1000 (cumulative via sum may be slow on device; fallback python float sum printed to 3 s.f.). p must be in [0,1]; r integer in [0,n] else error. Normal approximation and Poisson are not in AA and not offered.",
+   "tests": [
+    {
+     "input": "n=10 p=0.3 mode 1 r=3",
+     "expected": "120(0.3)^3(0.7)^7 = 0.267"
+    },
+    {
+     "input": "n=10 p=0.3 mode 2 r=2",
+     "expected": "P(X<=2) = 0.383"
+    },
+    {
+     "input": "n=10 p=0.3 mode 4 r=1; mode 7",
+     "expected": "1 - P(X<=0) = 1 - 0.7^10 = 0.972; E(X)=3, Var(X)=2.1"
+    },
+    {
+     "input": "p=0.2 mode 8 k=1 c=0.95; and B(4,1/2) P(X=2)",
+     "expected": "0.8^n<0.05, n>13.4, least n=14; P(X=2)=6/16=3/8"
+    }
+   ]
+  },
+  {
+   "id": "normal_prob",
+   "menu_label": "Normal prob",
+   "syllabus_ref": "4.9 normal distribution probabilities and inverse normal; 4.12 standardisation z=(x-mu)/sigma; conditional probability with normal; chaining to binomial",
+   "inputs": [
+    "mu: ",
+    "sigma (or v=variance): ",
+    "1 P(X<b) 2 P(X>a) 3 P(a<X<b) 4 P(X<x)=p 5 P(X>x)=p 6 P(mu-c<X<mu+c)=p 7 conditional [1]",
+    "[1-3] bound(s): ",
+    "[4-6] p: ",
+    "[7] event lo,hi (blank=inf): ",
+    "[7] given lo,hi (blank=inf): ",
+    "Use result as p in B(n,p)? n (0=no) [0]"
+   ],
+   "steps": [
+    "X ~ N({mu}, {sigma}^2)",
+    "[v=] sigma = sqrt({v}) = {sigma}",
+    "[1-3] z = ({x} - {mu})/{sigma} = {z}",
+    "[1] P(X<{b}) = P(Z<{z}) = {p_3sf}",
+    "[2] P(X>{a}) = P(Z>{z}) = {p_3sf}",
+    "[3] P({a}<X<{b}) = P({z1}<Z<{z2})",
+    "[3]             = {p_3sf}",
+    "[4] P(X<x) = {p}",
+    "[5] P(X>x) = {p} => P(X<x) = {1-p}",
+    "[4,5] z = invNorm({pl}) = {z4}",
+    "[4,5] (x - {mu})/{sigma} = {z4}",
+    "[4,5] x = {mu} + {z4}({sigma}) = {x_3sf}",
+    "[6] P(X<{mu}+c) = (1+{p})/2 = {pp}",
+    "[6] c = {z4}({sigma}) = {c}",
+    "[6] {lo_3sf} < X < {hi_3sf}",
+    "[7] P(E|G) = P(EnG)/P(G)",
+    "[7]        = P({int lo}<X<{int hi})/P({glo}<X<{ghi})",
+    "[7]        = {num}/{den} = {p_3sf}",
+    "[chain] Y ~ B({n}, {p_full})  -> Binomial solver",
+    "ANS: {p_3sf} | x = {x_3sf}"
+   ],
+   "giac_calls": [
+    "sqrt({v})",
+    "evalf(({x}-({mu}))/({sigma}))",
+    "normald_cdf({mu},{sigma},{x})",
+    "evalf(normald_cdf({mu},{sigma},{b})-normald_cdf({mu},{sigma},{a}))",
+    "evalf((1+erf(({x}-({mu}))/(({sigma})*sqrt(2))))/2)",
+    "normald_icdf(0,1,{p})",
+    "fsolve(erf(z/sqrt(2))=2*({p})-1,z=0)",
+    "evalf(({mu})+({z})*({sigma}))"
+   ],
+   "python_logic": "Probabilities via normald_cdf (UNVERIFIED); on G failure use the erf formula (established). One-sided: blank/inf bound -> cdf or 1-cdf. Keep all intermediates at full precision (pass G strings, not rounded floats); print z to 4 d.p. (or GDC-style notation normCdf/invNorm as the expression line), final 3 s.f. Inverse: P(X>x)=p converted to lower tail 1-p; symmetric case uses (1+p)/2. invNorm via normald_icdf (UNVERIFIED) -> fallback fsolve on erf (UNVERIFIED syntax) -> final fallback bounded python bisection on [-8,8], 45 iterations, each evaluating G('evalf(erf(..))'). Conditional: python intersects the two intervals (None = infinity); empty intersection -> P=0. P(X=a) for a single value prints 'P(X={a}) = 0'. Chain option passes the unrounded probability string to binomial_dist.",
+   "scope_limits": "sigma>0 and 0<p<1 required, else error. No continuity correction / normal approximation to binomial (not AA). Results are technology values: printed expression then 3 s.f.",
+   "tests": [
+    {
+     "input": "mu=50 sigma=4, P(X<55)",
+     "expected": "z=1.25, P=0.894"
+    },
+    {
+     "input": "mu=50 sigma=4, P(45<X<55)",
+     "expected": "z=-1.25 to 1.25, P=0.789"
+    },
+    {
+     "input": "mu=50 sigma=4, P(X<x)=0.9; P(X>x)=0.05",
+     "expected": "z=1.2816, x=55.1; z=1.6449, x=56.6"
+    },
+    {
+     "input": "mu=50 sigma=4, conditional P(X>55 | X>50)",
+     "expected": "0.10565/0.5 = 0.211"
+    }
+   ]
+  },
+  {
+   "id": "normal_unknown",
+   "menu_label": "Normal mu/sigma",
+   "syllabus_ref": "4.12 standardisation; finding unknown mean and/or standard deviation from given probabilities (simultaneous equations with inverse normal z-values)",
+   "inputs": [
+    "Unknown 1=mu 2=sigma 3=both [1]",
+    "[1] sigma: ",
+    "[2] mu: ",
+    "Cond 1 type 1 P(X<x)=p 2 P(X>x)=p 3 P(x<X<mu)=p [1]",
+    "x1, p1: ",
+    "[3] Cond 2 type: ",
+    "[3] x2, p2: "
+   ],
+   "steps": [
+    "X ~ N(mu, sigma^2)",
+    "P(X{<|>}{x1}) = {p1}",
+    "[>] => P(X<{x1}) = 1 - {p1} = {pl}",
+    "[type 3] => P(X<{x1}) = 0.5 - {p1} = {pl}",
+    "z1 = invNorm({pl}) = {z1}",
+    "[1] ({x1} - mu)/{sigma} = {z1}",
+    "[1] mu = {x1} - ({z1})({sigma})",
+    "[1] mu = {mu_3sf}",
+    "[2] ({x1} - {mu})/sigma = {z1}",
+    "[2] sigma = ({x1} - {mu})/({z1})",
+    "[2] sigma = {s_3sf}",
+    "[3] {x1} - mu = {z1} sigma   (1)",
+    "[3] {x2} - mu = {z2} sigma   (2)",
+    "[3] (2)-(1): {x2-x1} = {z2-z1} sigma",
+    "[3] sigma = {s}",
+    "[3] mu = {x1} - ({z1})({s}) = {mu}",
+    "ANS: mu = {mu_3sf} [, sigma = {s_3sf}]"
+   ],
+   "giac_calls": [
+    "evalf(1-({p}))",
+    "evalf(1/2-({p}))",
+    "normald_icdf(0,1,{pl})",
+    "fsolve(erf(z/sqrt(2))=2*({pl})-1,z=0)",
+    "evalf(({x1})-({z1})*({sigma}))",
+    "evalf((({x1})-({mu}))/({z1}))",
+    "linsolve([({x1})-mu=({z1})*s,({x2})-mu=({z2})*s],[mu,s])"
+   ],
+   "python_logic": "Convert each condition to a lower-tail probability pl (type 2: 1-p; type 3: 1/2-p, with x below mu). z from normald_icdf (UNVERIFIED) with the same fallbacks as normal_prob. Single unknown: rearrange the standardisation line explicitly. Both: print equations (1),(2), the subtraction line, then linsolve for verification; keep z at full precision; reject solution with sigma<=0 ('check inequality directions'). p=0.5 with sigma unknown -> z=0 -> 'Cannot find sigma from p=0.5'.",
+   "scope_limits": "Two conditions maximum; relations like mu=2sigma or conditions involving both variables nonlinearly -> fallback: print the two standardised equations and solve with G solve, flagged '(GDC)'. Non-normal models out of scope.",
+   "tests": [
+    {
+     "input": "unknown mu, sigma=5, P(X<40)=0.2",
+     "expected": "z=-0.8416, mu=40+0.8416(5)=44.2"
+    },
+    {
+     "input": "unknown sigma, mu=30, P(X>35)=0.1",
+     "expected": "z=1.2816, sigma=5/1.2816=3.90"
+    },
+    {
+     "input": "both: P(X<20)=0.1, P(X>40)=0.2",
+     "expected": "z1=-1.2816, z2=0.8416, 20=2.1232 sigma, sigma=9.42, mu=32.1"
+    }
+   ]
+  },
+  {
+   "id": "continuous_rv",
+   "menu_label": "Continuous RV",
+   "syllabus_ref": "AHL 4.14 continuous random variables, pdf incl. piecewise: find k from integral=1, P(a<X<b), mode, median, E(X), E(X^2), Var(X), E(aX+b), Var(aX+b)",
+   "inputs": [
+    "Pieces (1-3) [1]",
+    "f(x) on piece i: ",
+    "lower, upper of piece i: ",
+    "Unknowns e.g. k or k,a [k]",
+    "Extra cond e.g. E=2 or f(1)=0 (blank): ",
+    "Tasks 1 k 2 P 3 E,Var 4 median 5 mode 6 aX+b 0 all [0]",
+    "[2] c, d: ",
+    "[6] a, b: "
+   ],
+   "steps": [
+    "[k] Int f(x) dx over domain = 1",
+    "[k] Int[{a1},{b1}] {f1} dx [+ Int[{a2},{b2}] {f2} dx] = 1",
+    "[k] [{F1}]_{a1}^{b1} [+ [{F2}]_{a2}^{b2}] = 1",
+    "[k] ({F1(b1)}) - ({F1(a1)}) [+ ...] = 1",
+    "[k] {lhs} = 1",
+    "[k] k = {k}",
+    "[2 unknowns] (1) {lhs} = 1, (2) {extra eq}",
+    "[2 unknowns] => k = {k}, a = {a}",
+    "f(x) = {f with k}",
+    "[P] P({c}<X<{d}) = Int[{c},{d}] f(x) dx",
+    "[P]   = [{F}]_{c}^{d} [+ next piece]",
+    "[P]   = {exact} ({p_3sf})",
+    "E(X) = Int x f(x) dx",
+    "     = Int[{a1},{b1}] {x f1} dx [+ ...]",
+    "     = [{G1}]_{a1}^{b1} [+ ...]",
+    "     = {E}",
+    "E(X^2) = Int x^2 f(x) dx = [{H1}]_{a1}^{b1} [+ ...] = {E2}",
+    "Var(X) = E(X^2) - [E(X)]^2",
+    "       = {E2} - ({E})^2 = {V}",
+    "sd = sqrt({V}) = {sd}",
+    "[median pw] Int[{a1},{b1}] f dx = {c1} {<|>=} 1/2",
+    "[median] Int[{lo},m] {fi} dx = 1/2 [- {c_prev}]",
+    "[median] [{Fi}]_{lo}^{m} = {rhs}",
+    "[median] {eq in m}",
+    "[median] m = {root in [lo,hi]} ({m_3sf})",
+    "[median numeric] m = {m_3sf} (GDC)",
+    "[mode] f'(x) = {df}",
+    "[mode] f'(x) = 0 => x = {x0}",
+    "[mode] f''({x0}) = {val} < 0 => max",
+    "[mode] f({a})={fa}, f({b})={fb}, f({x0})={f0}",
+    "[mode] mode = {xm}",
+    "[aX+b] E(aX+b) = aE(X)+b = {..}",
+    "[aX+b] Var(aX+b) = a^2 Var(X) = {..}",
+    "ANS: k = {k}, E(X) = {E}, Var(X) = {V}, median = {m}, mode = {xm}"
+   ],
+   "giac_calls": [
+    "integrate({f},x)",
+    "subst({F},x={b})",
+    "simplify(({Fb})-({Fa}))",
+    "solve({lhs}=1,k)",
+    "solve([{lhs}=1,{eq2}],[k,{u2}])",
+    "subst({f},k={k})",
+    "integrate(x*({f}),x)",
+    "integrate(x^2*({f}),x)",
+    "simplify({E2}-({E})^2)",
+    "sqrt({V})",
+    "solve(subst({F},x=m)-({Flo})=({rhs}),m)",
+    "fsolve(subst({F},x=m)-({Flo})=({rhs}),m={guess})",
+    "diff({f},x)",
+    "diff({f},x,2)",
+    "solve(diff({f},x)=0,x)",
+    "subst({f},x={x0})",
+    "limit({F},x,inf)",
+    "evalf({expr})"
+   ],
+   "python_logic": "Store pieces as list of (f_i, lo_i, hi_i), <=3, contiguous. Each definite integral is shown as antiderivative (G integrate) + bracket evaluation via subst at both bounds + simplify, so the working is visible; if the integrand is a product needing by parts (e.g. x*e^(-x)), print 'by parts' and reuse the calculus area's IBP routine if present, else show the antiderivative. Unknowns: one -> solve integral=1, keep root making f>=0 (sampled at 5 points per piece with evalf); two -> also form the extra equation (E(X)=v via x f integral, or a pdf value/continuity at a breakpoint) and solve the system. P(c<X<d): bounded loop over pieces, integrate on [max(c,lo),min(d,hi)] where non-empty. Median: cumulative c_i over pieces in order (bounded), first piece where cumulative >= 1/2, equation with c_prev; solve for m, parse_list, keep root with lo<=evalf(root)<=hi; if solve returns none valid, fsolve with guess=(lo+hi)/2 and label (GDC). Mode: per piece roots of f' within (lo,hi) plus all endpoints/breakpoints, evaluate f, pick max; for interior max print f'' check. aX+b from E and Var. Upper bound 'inf' handled with limit(F,x,inf).",
+   "scope_limits": "<=3 pieces, <=2 unknowns; cumulative distribution function as a function is not required in the 2021 AA guide and not output. f must be non-negative on its domain (warning printed otherwise). Median equations of degree >4 or transcendental are solved numerically (3 s.f., labelled GDC). Integrals Giac cannot do in closed form -> numeric evalf of the definite integral with '(GDC)'.",
+   "tests": [
+    {
+     "input": "f=k*x^2 on [0,3], all tasks, P(1<X<2), a,b=2,1",
+     "expected": "9k=1, k=1/9, P(1<X<2)=7/27, E(X)=9/4, E(X^2)=27/5, Var(X)=27/80, median=(27/2)^(1/3)=3*4^(1/3)/2=2.38, mode=3, E(2X+1)=11/2, Var(2X+1)=27/20"
+    },
+    {
+     "input": "f=k*(4-x^2) on [0,2]",
+     "expected": "16k/3=1, k=3/16, E(X)=3/4, E(X^2)=4/5, Var(X)=19/80, median: m^3-12m+8=0, m=0.695 (GDC), mode=0"
+    },
+    {
+     "input": "piecewise k*x on [0,1], k*(2-x) on [1,2]",
+     "expected": "k/2+k/2=1, k=1, E(X)=1, E(X^2)=7/6, Var(X)=1/6, median=1, mode=1"
+    }
+   ]
+  }
+ ],
+ "not_automatable": [
+  "4.1 Sampling concepts (population vs sample, random/systematic/stratified/quota/convenience sampling, bias, reliability of data sources): qualitative definitions and judgement, nothing to compute.",
+  "4.1 Deciding whether an outlier should be removed or is a data error: needs judgement about the context. The solver only flags values beyond 1.5 IQR.",
+  "4.2 Drawing histograms, box plots and cumulative frequency curves, and reading values off a printed graph: graphical work. The solver gives the numbers to plot and interpolated estimates instead.",
+  "4.3/4.4 Comparing or commenting on distributions, judging whether a linear model suits a scatter diagram, correlation versus causation, interpreting results in context: written reasoning. Only the short a/b interpretation templates are printed, and only when asked.",
+  "4.5/4.6 Drawing Venn diagrams, tree diagrams and sample-space diagrams: visual. The solver outputs region values and branch products in text form.",
+  "4.7/4.8 Choosing a distribution and stating modelling assumptions (independent trials, constant p, fixed n; or why a normal model fits): word answers that depend on the context.",
+  "4.11/4.13 Algebraic 'show that' proofs of probability identities or deriving Bayes' theorem: proofs, not calculations. Numeric checks such as the independence test are automated.",
+  "4.14 General proofs, e.g. proving E(aX+b)=aE(X)+b or showing a parametric function is a pdf for all parameter values: proof-style. The solver only checks the given case (integral = 1, f >= 0 at sampled points).",
+  "4.9 Sketching and shading normal curves, and symmetry arguments given in words: graphical. The probabilities themselves are computed."
+ ],
+ "unverified_giac": [
+  "normald_cdf(mu,sigma,x): argument order and whether it returns lower-tail P(X<x). Also the 4-argument interval form normald_cdf(mu,sigma,a,b). Fallback: (1+erf((x-mu)/(sigma*sqrt(2))))/2",
+  "normald_icdf(mu,sigma,p): name and argument order. Fallback: fsolve on erf, then Python bisection",
+  "binomial_cdf(n,p,r): name, argument order, and whether r is inclusive. Only used as a fallback; the primary method is sum(comb(n,i)*p^i*(1-p)^(n-i),i,0,r)",
+  "exact(0.3): converting a float to a rational (3/10) in the KhiCAS build",
+  "fsolve(eq,var=guess): syntax and that it returns a single float in KhiCAS. The interval form fsolve(eq,var=a..b) is also unverified",
+  "erf(x): assumed present in the KhiCAS build (needed for every normal fallback)",
+  "solve(...) output format in KhiCAS: possible 'list[...]' wrapper, how real cube roots are given (e.g. 3*2^(2/3)/2), and whether real-only mode drops complex roots. parse_list must handle these",
+  "limit(F,x,inf): whether infinity is spelled 'inf' or '+infinity' in KhiCAS",
+  "integrate(f,x) on piecewise-free expressions with parameters k,a: assumed to treat k and a as constants without assume()",
+  "MicroPython math.erf: may be missing on the Ndless build. The bisection fallback must call G('evalf(erf(..))') instead"
+ ]
+}

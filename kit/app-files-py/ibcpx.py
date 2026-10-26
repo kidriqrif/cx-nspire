@@ -1,0 +1,485 @@
+from ibcore import*
+TITLE='Complex/systems'
+def _cis(s):
+ for z in range(10):
+  k=s.find('cis(')
+  if k<0:
+   break
+  d=0
+  e=k+3
+  while e<len(s):
+   if s[e]=='(':
+    d+=1
+   elif s[e]==')':
+    d-=1
+    if d==0:
+     break
+   e+=1
+  s=s[:k]+'exp(i*('+s[k+4:e]+'))'+s[e+1:]
+ return s
+def _askz(p,lb):
+ t=ask(p,'',0)
+ z=norm(_cis(t))
+ if t:
+  out(lb+' = '+(t if 'exp('in z else ps(z)))
+ return z
+def _zc(lb,z,a,b):
+ c=_cs(a,b)
+ if ps(z).replace(' ','')!=c.replace(' ',''):
+  out(lb+' = '+c)
+def _isint(r):
+ return isnum(r)and '/'not in r and('.'not in r)
+def _ri(z):
+ return[S('re('+z+')'),S('im('+z+')')]
+def _cs(a,b):
+ if b=='0':
+  return ps(a)
+ ts=split_terms(b)
+ if len(ts)>1:
+  t='('+ps(b)+')i'
+  if ts[0][0]=='-':
+   t='-('+ps(S('-('+b+')'))+')i'
+ else:
+  neg,c=sign_body(b)
+  t=pp(c)
+  if c=='1':
+   t=''
+  elif[ch for ch in t if ch in '/+-*']:
+   t='('+t+')'
+  t=('-'if neg else '')+t+'i'
+ return t if a=='0'else join_signed([ps(a),t])
+def _gz(a,b):
+ return '('+a+')+('+b+')*i'
+def _pk(k):
+ if k=='0':
+  return '0'
+ neg,kk=sign_body(k)
+ d=split_top(kk,'/')+['1']
+ return('-'if neg else '')+(''if d[0]=='1'else d[0]+'*')+'pi'+(''if d[1]=='1'else '/'+d[1])
+def _red(k):
+ return S('('+k+')-2*ceil((('+k+')-1)/2)')
+def _ang(t):
+ k=S('('+t+')/pi')
+ if isnum(k):
+  return[k,_pk(k)]
+ return['',S(t)]
+def _eul(g):
+ if len(split_terms(g[1]))>1:
+  return 'i('+pp(g[1])+')'
+ neg,b=sign_body(g[1])
+ e=pp(b)
+ if g[0]:
+  e=e.replace('π','iπ')if CFG['uni']else e.replace('pi','i pi')
+ else:
+  e='i '+e
+ return('-'if neg else '')+e
+def _rc(R):
+ if R=='1':
+  return ''
+ t=pp(R)
+ return '('+t+')'if[c for c in R if c in '/+-']else t
+def _sq2(a):
+ return(pp(a)if _isint(a)and a[0]!='-'else '('+pp(a)+')')+'^2'
+def _polar(z):
+ a,b=_ri(z)
+ r=S('sqrt(('+a+')^2+('+b+')^2)')
+ if 'cos'in r:
+  r=G('simplify('+r+')')
+ _zc('z',z,a,b)
+ if a=='0'or b=='0':
+  out('|z| = '+pp(r))
+ else:
+  out('|z| = '+('√('if CFG['uni']else 'sqrt(')+_sq2(a)+' + '+_sq2(b)+') = '+pp(r))
+ if r=='0':
+  return(a,b,r,0)
+ g=_ang(G('arg('+_gz(a,b)+')'))
+ if a!='0'and b!='0':
+  q=S('abs(('+b+')/('+a+'))')
+  al=S('atan('+q+')')
+  out('ref angle = arctan('+pp(q)+')'+(''if 'atan'in al else ' = '+pp(al)))
+  k=(1 if F(b)>0 else 4)if F(a)>0 else 2 if F(b)>0 else 3
+  out('arg z = '+ps(['%s','pi-%s','%s-pi','-%s'][k-1]%al)+(' = '+pp(g[1])if g[0]and k in(2,3)else '')+' ('+['1st','2nd','3rd','4th'][k-1]+' quadrant)')
+ else:
+  out('arg z = '+pp(g[1]))
+ return(a,b,r,g)
+def cforms():
+ hdr('Complex forms')
+ z=_askz('z =','z')
+ a,b,r,g=_polar(z)
+ if r=='0':
+  out('arg undefined')
+  wait()
+  return
+ out('z = '+_rc(r)+'cis('+pp(g[1])+')')
+ out('z = '+_rc(r)+'e^('+_eul(g)+')')
+ ans('|z|',r)
+ ans('arg z',g[1])
+ w=_askz('w = (blank=skip)','w')
+ if w:
+  c,d=_ri(w)
+  _zc('w',w,c,d)
+  Z='('+_cs(a,b)+')'
+  W='('+_cs(c,d)+')'
+  ans('z + w',_cs(S(a+'+'+c),S(b+'+'+d)))
+  ans('z - w',_cs(S(a+'-('+c+')'),S(b+'-('+d+')')))
+  out('zw = '+Z+W)
+  bd=S('('+b+')*('+d+')')
+  out(' = '+join_signed([pp(S(a+'*('+c+')')),_cs('0',S(a+'*('+d+')')),_cs('0',S(b+'*('+c+')')),pp(bd)+'i^2'if bd!='0'else '']))
+  ans('zw',_cs(S(a+'*('+c+')-('+bd+')'),S(a+'*('+d+')+('+b+')*('+c+')')))
+  if c=='0'and d=='0':
+   out('w = 0: z/w undefined')
+  else:
+   nd=S('-('+d+')')
+   out('z/w = '+Z+'('+_cs(c,nd)+')/('+W+'('+_cs(c,nd)+'))')
+   nr,ni=_ri('('+_gz(a,b)+')*('+_gz(c,nd)+')')
+   m=S('('+c+')^2+('+d+')^2')
+   out(' = ('+_cs(nr,ni)+')/'+pp(m))
+   ans('z/w',_cs(S('('+nr+')/('+m+')'),S('('+ni+')/('+m+')')))
+  ans('z*',_cs(a,S('-('+b+')')))
+ wait()
+def _cart(R,ang,lbl):
+ c=S('cos('+ang+')')
+ s=S('sin('+ang+')')
+ if 'cos'in c or 'sin'in s:
+  out('ANS: '+lbl+' ~ '+_cs(sf3(F('('+R+')*'+c)),sf3(F('('+R+')*'+s))))
+  return
+ if c!='0'and s!='0'and(R!='1'):
+  out(' = '+_rc(R)+'('+_cs(c,s)+')')
+ x,y=_ri('('+R+')*('+_gz(c,s)+')')
+ ans(lbl,_cs(x,y))
+def demoivre():
+ hdr('De Moivre z^n')
+ z=_askz('z =','z')
+ n=askn('n =')
+ if not _isint(n):
+  out('n must be an integer (use nth roots)')
+  wait()
+  return
+ a,b,r,g=_polar(z)
+ if r=='0':
+  ans('z^'+n,'0')
+  wait()
+  return
+ pn=n if n[0]!='-'else '('+n+')'
+ out('z = '+_rc(r)+'cis('+pp(g[1])+')')
+ R=S('('+r+')^('+n+')')
+ rr=pp(r)if r=='1'or(isnum(r)and r[0]!='-'and('/'not in r))else '('+pp(r)+')'
+ t=pp(g[1])
+ nt=t if n=='1'else n+t if t[0]not in DIG+'-('else n+'('+t+')'
+ rp=''if r=='1'else rr+'^'+pn+' '
+ out('z^'+pn+' = '+rp+'cis('+nt+') (De Moivre)')
+ if g[0]:
+  k=S('('+n+')*('+g[0]+')')
+  t=_pk(k)
+  if rp or pp(t)!=nt:
+   out(' = '+_rc(R)+'cis('+pp(t)+')')
+  kr=_red(k)
+  if kr!=k and kr!='0':
+   t=_pk(kr)
+   out(' = '+_rc(R)+'cis('+pp(t)+')')
+  _cart(R,t,'z^'+pn)
+ else:
+  out(' = '+_rc(R)+'cis('+nt+')')
+  x,y=_ri('expand(('+_gz(a,b)+')^('+n+'))')
+  ans('z^'+pn,_cs(x,y))
+ wait()
+def nroots():
+ hdr('nth roots w^n = z')
+ z=_askz('z =','z')
+ n=int(ask('n ='))
+ if n<2:
+  out('Need integer n >= 2')
+  wait()
+  return
+ a,b,r,g=_polar(z)
+ if r=='0':
+  ans('w','0')
+  wait()
+  return
+ ak=(''if g[1]=='0'else pp(g[1])+' + ')+('2kπ'if CFG['uni']else '2kpi')
+ out('z = '+_rc(r)+'cis('+ak+')')
+ R=S('('+r+')^(1/'+str(n)+')')
+ t=Gs('normal('+R+')')
+ if t and len(t)<=len(R):
+  R=t
+ out('w = '+_rc(R)+'cis('+('('+ak+')'if '+'in ak else ak)+'/'+str(n)+')')
+ out('k = '+', '.join([str(j)for j in range(n)])if n<5 else 'k = 0, 1, ..., '+str(n-1))
+ for k in range(min(n,8)):
+  if g[0]:
+   c0=S('(('+g[0]+')+2*'+str(k)+')/'+str(n))
+   t0=_pk(c0)
+   t=_pk(_red(c0))
+  else:
+   t0=S('('+g[1]+'+2*'+str(k)+'*pi)/'+str(n))
+   t=t0
+   while F(t)>F('pi'):
+    t=S(t+'-2*pi')
+  line='k=%d: w = %scis(%s)'%(k,_rc(R),pp(t0))
+  if pp(t)!=pp(t0):
+   line+=' = %scis(%s)'%(_rc(R),pp(t))
+  out(line)
+  _cart(R,t,'w'+str(k))
+ wait()
+def _cmp(p,Q,n):
+ L=G('coeff('+p+',x,'+str(n)+')')
+ qt=(''if L=='1'else L+'*')+'x'+('^2+b*x'if n>3 else '')+'+c'
+ E=G('expand(('+Q+')*('+qt+'))')
+ out('p(x) = ('+ps(Q)+')('+ps(qt)+')')
+ for k,w in([(3,'b')]if n>3 else[])+[(0,'c')]:
+  l=G('coeff('+E+',x,'+str(k)+')')
+  r=G('coeff('+p+',x,'+str(k)+')')
+  c=GL('solve('+l+'='+r+','+w+')')
+  if len(c)!=1:
+   return
+  out(('constant'if k==0 else 'x^'+str(k))+': '+ps(l)+' = '+ps(r)+(', '+w+' = '+ps(c[0])if l!=w else ''))
+def conjroot():
+ hdr('Conjugate root')
+ t=ask('p(x) =','',0)
+ p=norm(t[:t.rfind('=')]if t.replace(' ','')[-2:]=='=0'else rhs(t))
+ if has(p,'z')and(not has(p,'x')):
+  p=G('subst('+p+',z=x)')
+ out('p(x) = '+ps(p))
+ z=_askz('Root z =','z')
+ a,b=_ri(z)
+ if b=='0':
+  out('z is real: no conjugate pair')
+  wait()
+  return
+ zs=_gz(a,b)
+ zc=_gz(a,'-('+b+')')
+ pr=[v for v in GL('lname('+p+')')if v!='x']
+ if pr:
+  E=G('expand(subst('+p+',x='+zs+'))')
+  out('p('+_cs(a,b)+') = 0:')
+  A=S('re('+E+')')
+  B=S('im('+E+')')
+  out('Re: '+ps(A)+' = 0')
+  out('Im: '+ps(B)+' = 0')
+  vs=GL('solve(['+A+'=0,'+B+'=0],['+','.join(pr)+'])')
+  vs=parse_list(vs[0])if vs else[]
+  if len(vs)!=len(pr)or[v for v in vs if has_var(v)]:
+   out('No unique solution')
+   wait()
+   return
+  for j in range(len(pr)):
+   ans(pr[j],vs[j])
+  p=G('expand(subst('+p+',['+','.join(pr)+'],['+','.join(vs)+']))')
+  out('p(x) = '+ps(p))
+ else:
+  v=S('expand(subst('+p+',x='+zs+'))')
+  out('p('+_cs(a,b)+') = '+ps(v))
+  if v!='0':
+   out('p(z) != 0: z is not a root')
+   wait()
+   return
+ Q=G('expand((x-('+zs+'))*(x-('+zc+')))')
+ q=S('quo('+p+','+Q+',x)')
+ if S('rem('+p+','+Q+',x)')!='0':
+  out('Coefficients are not real')
+  wait()
+  return
+ cc=_cs(a,S('-('+b+')'))
+ out('z* = '+cc+' is also a root (real coefficients)')
+ out('(x - ('+_cs(a,b)+'))(x - ('+cc+')) = '+ps(Q))
+ n=int(G('degree('+p+',x)'))
+ if 2<n<5:
+  _cmp(p,Q,n)
+ if n>2:
+  out('p(x) = ('+ps(Q)+')('+ps(q)+')')
+ elif q!='1':
+  out('p(x) = '+pp(q)+'('+ps(Q)+')')
+ L=[_cs(a,b),cc]
+ if has(q,'x'):
+  for t in GL('czeros('+q+',x)'):
+   u,v=_ri(t)
+   L.append(_cs(u,v))
+ out('ANS: roots = '+', '.join(L))
+ wait()
+def _hp(e,P):
+ for p in P:
+  if has(e,p):
+   return True
+ return False
+def _lam(s):
+ if CFG['uni']:
+  s=s.replace('lambda','λ').replace('mu','μ')
+ return s
+def _mx(M,m):
+ Q=[[_lam(pp(e))for e in row]for row in M]
+ W=[max([len(row[j])for row in Q])for j in range(m)]
+ for row in Q:
+  out('['+' '.join([' '*(W[j]-len(row[j]))+row[j]for j in range(m)])+' | '+row[m]+']')
+def _kf(a):
+ if a=='1':
+  return ''
+ return a if isnum(a)else pp(a)if len(split_terms(a))<2 else '('+ps(a)+')'
+def _sub(M,i,r,c,P):
+ p=M[r][c]
+ q=M[i][c]
+ t=G('normal(('+q+')/('+p+'))')
+ a,b=(G('denom('+t+')'),G('numer('+t+')'))
+ M[i]=[G('normal(('+a+')*('+M[i][j]+')-('+b+')*('+M[r][j]+'))')for j in range(len(M[i]))]
+ neg,bb=sign_body(b)if len(split_terms(b))<2 else(False,b)
+ out('R%d -> %sR%d %s %sR%d'%(i+1,_kf(a),i+1,'+'if neg else '-',_kf(bb),r+1))
+ h=G('gcd('+','.join(M[i])+')')
+ if isnum(h)and h not in('0','1'):
+  M[i]=[G('normal(('+e+')/'+h+')')for e in M[i]]
+  out('R%d -> R%d/%s'%(i+1,i+1,h))
+ return a
+def _fwd(M,m,P):
+ n=len(M)
+ r=0
+ piv=[]
+ mul=[]
+ for c in range(m):
+  if r>=n:
+   break
+  p=-1
+  bs=-999
+  for i in range(r,n):
+   e=M[i][c]
+   if e!='0':
+    sc=(0 if _hp(e,P)else 400)+(200 if e in('1','-1')else 0)-len(e)
+    if sc>bs:
+     p,bs=(i,sc)
+  if p<0:
+   continue
+  ch=p!=r
+  if ch:
+   M[p],M[r]=(M[r],M[p])
+   out('R%d <-> R%d'%(r+1,p+1))
+  for i in range(r+1,n):
+   if M[i][c]!='0':
+    a=_sub(M,i,r,c,P)
+    if _hp(a,P):
+     mul.append(a)
+    ch=True
+  if ch:
+   _mx(M,m)
+  piv.append(c)
+  r+=1
+ return(piv,mul)
+def _cv(k,v):
+ if k=='1':
+  return v
+ if k=='-1':
+  return '-'+v
+ return(pp(k)if len(split_terms(k))<2 else '('+ps(k)+')')+v
+def _back(M,m,piv,V):
+ r=len(piv)
+ sol={}
+ fr=[c for c in range(m)if c not in piv]
+ if r==0:
+  out('0 = 0: any '+','.join(V))
+  return
+ out('Infinitely many solutions'if fr else 'Unique solution')
+ for j in range(len(fr)):
+  sol[fr[j]]=['lambda','mu'][j]
+  out(_lam(V[fr[j]]+' = '+sol[fr[j]]))
+ for i in range(r-1,-1,-1):
+  c=piv[i]
+  k=[j for j in range(c+1,m)if M[i][j]!='0']
+  L=[_cv(M[i][c],V[c])]
+  for j in k:
+   d=ps(sol[j])
+   c1=M[i][j]
+   L.append(_cv(c1,d if c1=='1'or d in('lambda','mu')or(c1=='-1'and len(split_terms(d))<2)else '('+d+')'))
+  v=S('('+M[i][m]+'-('+'+'.join(['0']+['('+M[i][j]+')*('+sol[j]+')'for j in k])+'))/('+M[i][c]+')')
+  sol[c]=v
+  out(_lam('R%d: %s = %s'%(i+1,join_signed(L),pp(M[i][m]))))
+  if(k or M[i][c]!='1')and(fr or i):
+   out(_lam(' => '+V[c]+' = '+ps(v)))
+ if fr:
+  out(_lam('ANS: ('+','.join(V)+') = ('+', '.join([ps(sol[c])for c in range(m)])+')'))
+ else:
+  for c in range(m):
+   ans(V[c],sol[c])
+def _ana(M,m,piv,V,P):
+ n=len(M)
+ r=len(piv)
+ cond=[]
+ for i in range(r,n):
+  e=M[i][m]
+  if e!='0':
+   if not _hp(e,P):
+    out('R%d: 0 = %s (inconsistent)'%(i+1,pp(e)))
+    out('ANS: no solution')
+    return[]
+   out('R%d: 0 = %s'%(i+1,pp(e)))
+   cond.append(e)
+ crit=[]
+ lin=1
+ for i in range(r):
+  f=M[i][piv[i]]
+  q=[p for p in P if has(f,p)]
+  if len(q)==1:
+   vs=GL('solve('+f+'=0,'+q[0]+')')
+   lin=lin and len(vs)==1
+   for v in vs:
+    if[q[0],v]not in crit:
+     crit.append([q[0],v])
+  elif q:
+   lin=0
+ if crit:
+  if not lin:
+   out('Unique iff '+', '.join([pp(M[i][piv[i]])+' != 0'for i in range(r)if _hp(M[i][piv[i]],P)]))
+  out('ANS: unique solution if '+', '.join([k+' != '+pp(v)for k,v in crit]))
+  out(', '.join([k+' != '+pp(v)for k,v in crit])+':')
+ if cond:
+  k=[p for p in P if has(cond[0],p)][0]
+  vs=GL('solve('+cond[0]+'=0,'+k+')')
+  out('Consistent iff '+pp(cond[0])+' = 0')
+  if len(vs)!=1:
+   out('ANS: no solution')
+   return crit
+  v=vs[0]
+  out('ANS: '+k+' != '+pp(v)+': no solution')
+  out(k+' = '+pp(v)+':')
+  for row in M:
+   for j in range(m+1):
+    row[j]=G('normal(subst('+row[j]+','+k+'='+v+'))')
+ _back(M,m,piv,V)
+ return crit
+def linsys():
+ hdr('Linear system')
+ E=[]
+ for k in range(3):
+  e=ask('Eq%d%s'%(k+1,' (blank=end)'if k>1 else ''),'','')
+  if not e:
+   break
+  E.append(lhs0(norm(e)))
+ V=['x','y','z']if len(E)==3 or[e for e in E if has(e,'z')]else['x','y']
+ m=len(V)
+ sb=',['+','.join(V)+'],['+','.join(['0']*m)+'])'
+ rows=[]
+ for e in E:
+  row=[G('exact(diff('+e+','+v+'))')for v in V]+[G('exact(-subst('+e+sb+')')]
+  if[c for c in row if _hp(c,V)]:
+   out('Not linear in '+','.join(V))
+   wait()
+   return
+  L=G('lcm('+','.join(['denom('+c+')'for c in row])+')')
+  if L!='1':
+   row=[G('normal(('+L+')*('+c+'))')for c in row]
+  rows.append(row)
+ P=[v for v in GL('lname(['+','.join(E)+'])')if v not in V]
+ if len(P)>2:
+  out('Out of scope: max 2 parameters')
+  wait()
+  return
+ M=[list(row)for row in rows]
+ out('Augmented matrix:')
+ _mx(M,m)
+ piv,mul=_fwd(M,m,P)
+ crit=_ana(M,m,piv,V,P)
+ for kv in crit[:3]:
+  k,c=kv
+  out(k+' = '+pp(c)+':')
+  ok=not[a for a in mul if Gs('normal(subst('+a+','+k+'='+c+'))')=='0']
+  B=[[G('normal(subst('+e+','+k+'='+c+'))')for e in row]for row in(M if ok else rows)]
+  P2=[p for p in P if p!=k]
+  _mx(B,m)
+  p2,m2=_fwd(B,m,P2)
+  _ana(B,m,p2,V,P2)
+ wait()
+ITEMS=[('Complex forms/ops',cforms),('De Moivre z^n',demoivre),('nth roots',nroots),('Conjugate roots',conjroot),('Linear systems',linsys)]
