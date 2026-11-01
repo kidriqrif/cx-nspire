@@ -98,7 +98,7 @@ def _par(u,v):
    return None
  return k
 def _dg(r):
- d=F(r+'*180/pi')
+ d=F('('+r+')*180/pi')
  return str(int(round(d)))if abs(d-round(d))<1e-09 else sf3(d)
 def _ang(c):
  r=S('acos('+c+')')
@@ -122,9 +122,9 @@ def _uv(k):
  return(u,v,n)
 def _ks(e,rs):
  if not has(e,'k'):
-  return rs if e=='0'else[]
+  return('A'if rs is None else rs)if e=='0'else[]
  r=[z for z in GL('solve('+e+'=0,k)')if F(z)is not None]
- if rs is None:
+ if rs is None or rs=='A':
   return r
  return[z for z in rs if[y for y in r if abs(F(y)-F(z))<1e-09]]
 def vec_ops():
@@ -222,7 +222,10 @@ def vec_ops():
    e=_dot(u,v,'')
    out(ps(e)+' = 0')
    rs=_ks(e,None)
-  out('ANS: '+('k = '+' or '.join([pp(z)for z in rs])if rs else 'no value of k'))
+  if rs is None or rs=='A':
+   out('ANS: true for all k')
+  else:
+   out('ANS: '+('k = '+' or '.join([pp(z)for z in rs])if rs else 'no value of k'))
  wait()
 def _cart(s,k=''):
  ch=split_top(norm(s),',')

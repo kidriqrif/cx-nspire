@@ -77,7 +77,7 @@ CASES = [
     # uniform on [2,6]: k = 1/4, E = 4, Var = 16/12 = 4/3, median 4, no unique mode
     ('continuous_rv', ['1', 'k', '2,6', '345'],
      ['k(6 - 2) = 1', '4k = 1', 'ANS: k = 1/4', 'ANS: E(X) = 4', 'ANS: Var(X) = 4/3 (1.33)', 'm/4-1/2 = 1/2',
-      'ANS: median = 4', 'mode: not unique'], ['ANS: mode']),
+      'ANS: median = 4', 'mode: any x in 2<=x<=6, f = 1/4'], ['ANS: mode', 'mode: not unique']),
     # k sin x on [0,pi]: 2k = 1; E = pi/2; Var = pi^2/4 - 2; median, mode pi/2
     ('continuous_rv', ['1', 'k*sin(x)', '0,pi', '345'],
      ['k(-cos(pi) - (-cos(0))) = 1', '2k = 1', 'ANS: k = 1/2', 'ANS: E(X) = pi/2 (1.57)', 'ANS: Var(X) = pi^2/4-2 (0.467)',
@@ -99,4 +99,16 @@ CASES = [
     ('continuous_rv', ['1', 'k*x^2', '-1,1', '3'],
      ['k(1^3/3 - (-1)^3/3) = 1', 'ANS: k = 3/2', '3(1)^4/8 - 3(-1)^4/8', 'ANS: E(X) = 0',
       'ANS: Var(X) = 3/5']),
+    # infinite bound in a discrete query is +-1e300: everything is selected, P = 1
+    ('discrete_rv', ['1', '1,2,3', '1/6,1/3,1/2', '0', 'X<inf', ''],
+     ['P(X<INF) = P(X=1) + P(X=2) + P(X=3)', 'ANS: P(X<INF) = 1'], ['Error']),
+    ('discrete_rv', ['1', '1,2,3', '1/6,1/3,1/2', '0', 'X>-inf', ''],
+     ['ANS: P(X>-INF) = 1'], ['Error']),
+    # lower end -inf with an unknown k: ok() needs a finite sampling window; P with an inf bound
+    ('continuous_rv', ['1', 'k*e^x', '-inf,0', '2', '-inf,-1'],
+     ['[ke^x]_-inf^0 = 1', 'ANS: k = 1', 'f(x) = e^x, -inf<=x<=0',
+      'ANS: P(-inf<X<-1) = 1/e (0.368)'], ['No valid solution', 'Error']),
+    # constant pieces: mode is the whole interval of the larger one (f = 1/2 on [0,1])
+    ('continuous_rv', ['2', 'k', '0,1', 'k/2', '1,3', '5'],
+     ['ANS: k = 1/2', 'mode: any x in 0<=x<=1, f = 1/2'], ['mode: not unique', 'ANS: mode']),
 ]

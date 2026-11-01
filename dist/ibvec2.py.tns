@@ -133,7 +133,7 @@ def _ce(n,d,k=-1):
 def _eq(n,d,k=-1):
  return '+'.join(['('+n[i]+')*'+X[i]for i in range(3)if i!=k])+'='+d
 def _peq(a,n,ds,pts):
- if not[c for c in n if not isnum(c)or '/'in c]:
+ if not[c for c in n if not isnum(c)or '/'in c or '.'in c]:
   g=int(G('gcd('+n[0]+',gcd('+n[1]+','+n[2]+'))'))
   if[c for c in n if c!='0'][0][0]=='-':
    g=-g

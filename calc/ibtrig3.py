@@ -149,10 +149,13 @@ def _tb(T, A, c, fin=0):
     a = join_signed([pp(S(k + '*x')), pp(b0)])
     if T in BS:
         if F(c) == 0:
-            out(T + '(' + a + ') = 0: no solution')
-            return []
-        T = BS[T]
-        c = _S('1/(' + c + ')')
+            if T != 'cot':
+                out(T + '(' + a + ') = 0: no solution')
+                return []
+            T = 'cos'  # cot = 0  <=>  cos = 0
+        else:
+            T = BS[T]
+            c = _S('1/(' + c + ')')
     out(T + '(' + a + ') = ' + _q(c, 0, 0) + _N[0])
     _N[0] = ''
     cv = F(c)
@@ -379,7 +382,8 @@ def _gdc(f):
         elif y0 is not None and y1 is not None and abs(y1) >= 1e-9 and y0 * y1 < 0:
             r = parse_list(Gs('fsolve(' + f + '=0,x=' + str(a + i * h) + '..' + str(a + i * h + h) + ')'))
             v = F(r[0]) if r and r[0] else None
-            if v is not None and abs(F('subst(' + f + ',x=' + str(v) + ')') or 1) < 1e-6:
+            w = F('subst(' + f + ',x=' + str(v) + ')') if v is not None else None
+            if w is not None and abs(w) < 1e-6:  # a residual of exactly 0 is a valid root
                 rs.append(v)
         if len(rs) > 20:
             break

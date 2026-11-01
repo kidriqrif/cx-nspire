@@ -158,4 +158,6 @@ CASES = [
     # negative mu is bracketed in the sigma step: sigma = (5 - (-1))/1.2816 = 4.68
     ('normal_unknown', ['2', '-1', '2', '5,0.1'],
      ['(5 - (-1))/sigma = 1.2816', 'sigma = (5 - (-1))/1.2816', 'ANS: sigma = 4.68'], ['5 - -1']),
+    # both n and p blank: error message, not a crash / bogus search
+    ('binomial_dist', ['', ''], ['Error: enter n or p']),
 ]

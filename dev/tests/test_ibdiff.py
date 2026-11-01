@@ -135,4 +135,6 @@ CASES = [
     ('implicit', ['x^2 + y^2 = 25', '(5,0)'], ['dy/dx = -5/0',
                                                'ANS: dy/dx at (5,0) = undefined (vertical tangent)'],
      ['infinity']),
+    # tan^-1(x) means arctan(x)
+    ('diff_steps', ['tan^-1(x)', 'x', ''], ["ANS: f'(x) = 1/(1+x^2)"], ['Error']),
 ]

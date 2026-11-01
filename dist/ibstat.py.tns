@@ -319,14 +319,16 @@ def mean_transform():
   _A('mean',M)
  elif t=='4':
   a=askv('n, mean','',0)
-  v=_e(askn('value (+add/-remove)','',0))
+  ad=yes('add value (n=remove)')
+  v=_e(askn('value','',0))
   Sm=S('('+_q(a[0])+')*('+_q(a[1])+')')
   out(_S()+'x = '+a[0]+'('+a[1]+') = '+_f(Sm))
-  n2=S(_q(a[0])+('+1'if F(v)>=0 else '-1'))
+  n2=S(_q(a[0])+('+1'if ad else '-1'))
   if F(n2)<1:
    out('Error: no values left')
    wait()
    return
+  v=v if ad else S('-('+v+')')
   M=S('('+Sm+'+('+v+'))/'+n2)
   out('mean = ('+join_signed([_g(Sm),_g(v)])+')/'+_g(n2))
   _A('mean',M)

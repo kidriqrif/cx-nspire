@@ -90,7 +90,9 @@ def _negden(r):
         j = k + 2
         while j < len(r) and (r[j] in DIG or r[j] == '.'):
             j += 1
-        if i == k or j == k + 2:
+        # also skip a numerator that follows '^' (x^2/-3 must stay as is)
+        if (i == k or j == k + 2 or r[i - 1:i] == '^'
+                or (r[i - 1:i] in ('+', '-') and r[i - 2:i - 1] == '^')):
             k = r.find('/-', k + 2)
             continue
         q = r[i:k] + '/' + r[k + 2:j]
@@ -272,6 +274,62 @@ def _bars(s):
     return o
 
 
+def _fpow(t):
+    # sin^2(x) -> (sin(x))^2 ; sin^-1(x) -> asin(x) (also cos, tan)
+    n = len(t)
+    o = []
+    i = 0
+    while i < n:
+        x = t[i]
+        m = i + 2
+        if (x[0] == 'F' and x[1] in ('sin', 'cos', 'tan', 'sec', 'csc', 'cot')
+                and i + 1 < n and t[i + 1] == ['O', '^'] and m < n):
+            sg = ''
+            if t[m] == ['O', '-']:
+                sg = '-'
+                m += 1
+            if m < n and t[m][0] == 'N' and t[m][1].isdigit():
+                e = sg + t[m][1]
+                m += 1
+                j = m
+                if j < n and t[j] == ['L', '(']:
+                    # parenthesised argument: find the matching ')'
+                    d = 0
+                    while j < n:
+                        if t[j][0] == 'L':
+                            d += 1
+                        elif t[j][0] == 'R':
+                            d -= 1
+                        j += 1
+                        if d == 0:
+                            break
+                    if d:
+                        j = m
+                else:
+                    # bare argument: numbers/variables joined by ^
+                    ip = ''
+                    while j < n:
+                        a = t[j][0]
+                        if a == 'N' or a == 'V':
+                            ip = a
+                            j += 1
+                        elif (a == 'O' and t[j][1] == '^' and ip and j + 1 < n
+                              and t[j + 1][0] in ('N', 'V')):
+                            j += 2
+                        else:
+                            break
+                if j > m:
+                    if e == '-1' and x[1] in ('sin', 'cos', 'tan'):
+                        o += [['F', 'a' + x[1]]] + t[m:j]
+                    else:
+                        o += [['L', '('], x] + t[m:j] + [['R', ')'], ['O', '^'], ['N', e]]
+                    i = j
+                    continue
+        o.append(x)
+        i += 1
+    return o
+
+
 def norm(s):
     # tidy user input: implicit *, ** -> ^, IB log = log10
     s = str(s).strip()
@@ -280,7 +338,7 @@ def norm(s):
                  ('θ', 't')):
         s = s.replace(a, b)
     s = _bars(s)
-    t = _lex(s)
+    t = _fpow(_lex(s))
     o = ''
     prev = ''
     i = 0
@@ -785,8 +843,12 @@ def ask(p, dft='', e=1):
     s = input(t).strip()
     # KhiCAS pre-fills input with the previous answer: an unedited repeated
     # expression on a prompt that allows blank/default counts as blank
-    if s == ST.get('last') and len(s) > 2 and (dft or 'blank' in p):
+    if s == '"':
+        # ditto mark: repeat the previous answer
+        s = ST.get('last', '')
+    elif s == ST.get('last') and len(s) > 2 and (dft or 'blank' in p):
         s = ''
+        out('(same=blank; type " to repeat)')
     if s:
         ST['last'] = s
     if ':=' in s or ';' in s:

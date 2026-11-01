@@ -158,7 +158,7 @@ def _par(u, v):
 
 def _dg(r):
     # degrees of angle r: integer if exact, else 3 s.f.
-    d = F(r + '*180/pi')
+    d = F('(' + r + ')*180/pi')  # bracket r so sums keep precedence
     return str(int(round(d))) if abs(d - round(d)) < 1e-9 else sf3(d)
 
 
@@ -192,9 +192,10 @@ def _uv(k):
 def _ks(e, rs):
     # roots of e = 0 in k, kept if common with rs (None = any)
     if not has(e, 'k'):
-        return rs if e == '0' else []
+        # e == 0 holds for every k: 'A' marks 'all k' when nothing constrained k yet
+        return ('A' if rs is None else rs) if e == '0' else []
     r = [z for z in GL('solve(' + e + '=0,k)') if F(z) is not None]
-    if rs is None:
+    if rs is None or rs == 'A':
         return r
     return [z for z in rs if [y for y in r if abs(F(y) - F(z)) < 1e-9]]
 
@@ -295,7 +296,10 @@ def vec_ops():
             e = _dot(u, v, '')
             out(ps(e) + ' = 0')
             rs = _ks(e, None)
-        out('ANS: ' + ('k = ' + ' or '.join([pp(z) for z in rs]) if rs else 'no value of k'))
+        if rs is None or rs == 'A':
+            out('ANS: true for all k')
+        else:
+            out('ANS: ' + ('k = ' + ' or '.join([pp(z) for z in rs]) if rs else 'no value of k'))
     wait()
 
 

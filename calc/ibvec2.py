@@ -201,7 +201,7 @@ def _eq(n, d, k=-1):
 # ---------- plane equation ----------
 def _peq(a, n, ds, pts):
     # print r.n = a.n, Cartesian (and vector form); check given points
-    if not [c for c in n if not isnum(c) or '/' in c]:
+    if not [c for c in n if not isnum(c) or '/' in c or '.' in c]:
         g = int(G('gcd(' + n[0] + ',gcd(' + n[1] + ',' + n[2] + '))'))
         if [c for c in n if c != '0'][0][0] == '-':
             g = -g

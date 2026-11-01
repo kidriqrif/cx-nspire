@@ -76,9 +76,13 @@ CASES = [
      ['Sum x = 10(8) + 15(13) = 275', 'mean = 275/25', 'ANS: mean = 11'],
      ['Sum = n1 m1', 'n1,mean1:10,8', 'mean = 275/25 = 11']),
     # remove 3: (120-3)/9 = 13; add 30: (180+30)/10 = 21
-    ('mean_transform', ['4', '10,12', '-3'],
+    ('mean_transform', ['4', '10,12', 'n', '3'],
      ['Sum x = 10(12) = 120', 'mean = (120 - 3)/9', 'ANS: mean = 13'], ['mean = (120 - 3)/9 = 13']),
-    ('mean_transform', ['4', '9,20', '30'], ['mean = (180 + 30)/10', 'ANS: mean = 21']),
+    ('mean_transform', ['4', '9,20', 'y', '30'], ['mean = (180 + 30)/10', 'ANS: mean = 21']),
+    # removing a value of -3 (n): (120 + 3)/9 = 41/3 (the sign of the value is no longer the add/remove switch)
+    ('mean_transform', ['4', '10,12', 'n', '-3'], ['mean = (120 + 3)/9', 'ANS: mean = 41/3'], ['(120 - 3)']),
+    # adding a negative value (y): (120 - 3)/11
+    ('mean_transform', ['4', '10,12', 'y', '-3'], ['mean = (120 - 3)/11', 'ANS: mean = 117/11']),
 
     # sxx=10, syy=6, sxy=6, r=6/sqrt(60)=sqrt(15)/5=0.775; b=0.6, a=4-1.8=2.2; d=1, c=-1
     ('regression', ['1,2,3,4,5', '2,4,5,4,5', '3', '1', '3.5', ''],
@@ -97,7 +101,7 @@ CASES = [
       'y decreases 2.2 per unit of x', 'y = 10.5 when x = 0'], ['ANS: x =']),
     ('regression', ['1,1,1', '2,3,4', '1'], ['Error: no variation'], ['ANS']),
     # removing the only value leaves no data (no division by 0)
-    ('mean_transform', ['4', '1,3', '-10'], ['Error: no values left'], ['ANS', 'infinity']),
+    ('mean_transform', ['4', '1,3', 'n', '10'], ['Error: no values left'], ['ANS', 'infinity']),
     # a = 0: the new mean is 5, no 'new mean = 5 = 5'
     ('mean_transform', ['1', '3', '2', '', '', '0', '5'], ['new mean = 5', 'ANS: mean = 5'], ['5 = 5']),
     ('regression', ['1,2', '3,4'], ['Error: need equal lists'], ['ANS']),

@@ -123,4 +123,6 @@ CASES = [
                                           'n^3 - 3n^2 + 2n - 120 = 0', 'ANS: n = 6']),
     ('counting', ['c', '5', '7'], ['no selections', 'ANS: 5C7 = 0']),
     ('counting', ['c', '20', '10'], ['ANS: 20C10 = 184756']),
+    # u1 = r = 1/2: the repeated answer is typed as the ditto mark '"' (not read as blank)
+    ('geom', ['1/2', '"', '3', ''], ['u1 = 1/2, r = 1/2', 'ANS: S_inf = 1', 'ANS: u_3 = 1/8']),
 ]

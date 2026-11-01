@@ -144,4 +144,10 @@ CASES = [
      ['r3 = 7,8,9', 'Row totals: 6, 15, 24', 'Col totals: 12, 15, 18', 'N = 45',
       'P(r3|c1) = n(r3nc1)/n(c1) = 7/12', 'ANS: P(r3|c1) = 7/12 (0.583)',
       'P(c2) = n(c2)/N = 15/45', 'ANS: P(c2) = 1/3 (0.333)'], ['7/12 = 7/12']),
+    # P(A) = P(B) = 0.5, B entered with the ditto mark; independent -> P(AnB) = 0.25
+    ('prob_rules', ['1', '0.5', '"', '', '', '', '', '', '1', '0'],
+     ['P(A) = 0.5', 'P(B) = 0.5', 'P(AnB) = 0.25', 'P(AuB) = 0.75']),
+    # repeating an answer without the ditto mark counts as blank (and says so)
+    ('prob_rules', ['1', '0.5', '0.5', '', '', '', '', '', '0'],
+     ['(same=blank; type " to repeat)'], ['P(B) = 0.5']),
 ]

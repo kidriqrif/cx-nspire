@@ -157,7 +157,10 @@ def demoivre():
   return
  a,b,r,g=_polar(z)
  if r=='0':
-  ans('z^'+n,'0')
+  if F(n)<=0:
+   out('z^'+n+' is undefined for z = 0, n <= 0')
+  else:
+   ans('z^'+n,'0')
   wait()
   return
  pn=n if n[0]!='-'else '('+n+')'

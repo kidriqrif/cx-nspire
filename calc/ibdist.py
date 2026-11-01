@@ -202,6 +202,10 @@ def binomial_dist():
     pr = ask('p (blank=find p)', '', 0)
     p = _e(norm(pr))
     if not n:
+        if not pr:  # both blank: nothing to solve for
+            out('Error: enter n or p')
+            wait()
+            return
         _least(p, pr)
     elif not p:
         _findp(n)

@@ -127,6 +127,11 @@ CASES = [
     ('trig_graph', ['2', 'r', '3', '-3', '4', 'cos', '0'],
      ['d = (3 - 3)/2 = 0', 'ANS: f(x) = 3cos(pi x/2)'], ['+ 0']),
     # ---- option 3: max/min/zeros on an interval ----
+    # cot(x) = 0 is cos(x) = 0 (1/cot is undefined), not "no solution"
+    ('trig_graph', ['3', 'r', 'cot(x)', '0', '2pi'],
+     ['cot(x) = 0', 'cos(x) = 0', 'x = pi/2, 3pi/2', 'ANS zeros: (pi/2, 0), (3pi/2, 0)'], ['no solution', 'none']),
+    # GDC fallback keeps a root whose residual is exactly 0 (x = 1 gives 1 sin 1 - sin 1 = 0)
+    ('trig_eq', ['x*sin(x)=sin(1)', 'r', '', '', 'y'], ['ANS: x = 1.00, 2.84  (GDC)'], ['x = 2.84  (GDC)']),
     # sin(2x - pi/2) = 1 -> x = pi/2; = -1 -> x = 0, pi; = -1/3 -> x = 0.615, 2.53
     ('trig_graph', ['3', 'r', '3sin(2(x-pi/4))+1', '0', 'pi'],
      ['0 <= x <= pi', 'sin(2x - pi/2) = 1', 'ANS max: (pi/2, 4)', 'ANS min: (0, -2), (pi, -2)',

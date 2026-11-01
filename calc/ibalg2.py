@@ -57,12 +57,29 @@ def _lgb(s):
             m += 1
         if m == j and j > k + 3 and m < n and s[m] in LET:
             m += 1
-        if m == j or m >= n or s[m] != '(':
+        # allow spaces before the argument, and an unbracketed argument (log_2 x)
+        q = m
+        while q < n and s[q] == ' ':
+            q += 1
+        if m == j or q >= n:
             o += s[i:k + 3]
             i = k + 3
             continue
+        if s[q] != '(':
+            e = q
+            while e < n and s[e] in DIG + LET:
+                e += 1
+            if e == q:
+                o += s[i:k + 3]
+                i = k + 3
+                continue
+            o += s[i:k] + 'logb(' + s[q:e] + ',' + s[j:m] + ')'
+            if s[j] in DIG:
+                _B[0] = s[j:m]
+            i = e
+            continue
         d = 0
-        e = m
+        e = q
         while e < n:
             if s[e] == '(':
                 d += 1
@@ -71,7 +88,7 @@ def _lgb(s):
                 if d == 0:
                     break
             e += 1
-        o += s[i:k] + 'logb(' + s[m + 1:e] + ',' + s[j:m] + ')'
+        o += s[i:k] + 'logb(' + s[q + 1:e] + ',' + s[j:m] + ')'
         if s[j] in DIG:
             _B[0] = s[j:m]
         i = e + 1
@@ -259,7 +276,7 @@ def _expeq(L, R):
                     _roots(l + '=' + r)
                     return
         for s in (L, R):
-            if not has(s, 'x') and (F(s) or 1) <= 0:
+            if not has(s, 'x') and F(s) is not None and F(s) <= 0:  # F(s)==0 also has no solution
                 out('No solution: a^x > 0')
                 return
         l = G('lnexpand(ln(' + L + '))')

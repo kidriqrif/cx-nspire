@@ -153,4 +153,9 @@ CASES = [
     # not two distinct linear factors: one short note, no ANS that only repeats the input
     ('parfrac', ['1/(x+1)^2'], ['Not 2 distinct linear factors'], ['Out of scope', 'cover-up', 'A/', 'ANS:']),
     ('parfrac', ['1/(x^2+1)'], ['Not 2 distinct linear factors'], ['Out of scope', 'cover-up', 'A/', 'ANS:']),
+    # space before the log argument / unbracketed argument must still parse as logb
+    ('explog', ['log_2 (x)+log_2 (x-2)=3'], ['log_2(x(x-2)) = 3  (log laws)', 'x(x-2) = 2^3 = 8', 'ANS: x = 4']),
+    ('explog', ['log_2 x+log_2 (x-2)=3'], ['log_2(x(x-2)) = 3  (log laws)', 'ANS: x = 4']),
+    # a^x = 0 has no solution (RHS exactly 0 must be caught, not only negative)
+    ('explog', ['2^x=0'], ['No solution: a^x > 0'], ['ANS:']),
 ]

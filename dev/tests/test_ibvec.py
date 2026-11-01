@@ -81,6 +81,11 @@ CASES = [
     # (2,k,6) = 2(1,3,3) -> k = 6
     ('vec_ops', ['5', '2', '(2,k,6)', '(1,3,3)'], ['u x v = 0', '2(3) - k(1) = 0 => -k + 6 = 0', 'k(3) - 6(3) = 0 => 3k - 18 = 0', 'ANS: k = 6']),
     ('vec_ops', ['5', '2', '(2,k,5)', '(1,3,3)'], ['2(3) - 5(1) = 0 => 1 = 0', 'ANS: no value of k']),
+    # u.v = 0 for every k (u = (k,1,0) is always perpendicular to the z axis)
+    ('vec_ops', ['5', '1', '(k,1,0)', '(0,0,1)'], ['0 = 0', 'ANS: true for all k'], ['no value of k']),
+    ('vec_ops', ['5', '2', '(0,k,0)', '(0,2,0)'], ['u x v = 0', 'ANS: true for all k'], ['no value of k']),
+    # obtuse angle: cos = -1/3, theta = pi - arccos(1/3) = 1.91 rad = 109 deg (not 21)
+    ('vec_ops', ['3', '(1,0,0)', '(-1,2,2)', ''], ['cos theta = -1/(1 x 3) = -1/3', 'ANS: theta = 1.91 rad = 109 deg'], ['21']),
     # 4 + k^2 + 1 = 9 -> k = +-2
     ('vec_ops', ['5', '3', '(2,k,1)', '3'],
      ['|u| = 3', 'sqrt(2^2 + k^2 + 1^2) = 3', '2^2 + k^2 + 1^2 = 3^2', 'k^2 - 4 = 0', 'ANS: k = -2 or 2']),

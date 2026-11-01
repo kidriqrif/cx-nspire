@@ -133,4 +133,8 @@ CASES = [
       'ANS: y = 1', 'ANS: z = -1/(k+1)', 'k = -1:', 'R3: 0 = -1 (inconsistent)', 'ANS: no solution'],
      ['(-k)R1']),
     ('linsys', ['x+y=2', '2x+2y=4', ''], ['Infinitely many solutions', 'y = lambda', 'ANS: (x,y) = (2-lambda,lambda)']),
+    # 0^n is undefined for n <= 0, 0 only for n > 0
+    ('demoivre', ['0', '0'], ['undefined for z = 0, n <= 0'], ['ANS:']),
+    ('demoivre', ['0', '-2'], ['undefined for z = 0, n <= 0'], ['ANS:']),
+    ('demoivre', ['0', '3'], ['ANS: z^3 = 0'], ['undefined']),
 ]

@@ -199,4 +199,7 @@ CASES = [
      ['x = pi/6: LHS = 1/4, RHS = 3/4', 'ANS: not an identity']),
     # two sides over a common denominator: 1/(1-s) + 1/(1+s) = 2/(1-s^2) = 2/c^2 = 2 sec^2
     ('trig_ident', ['3', '', '1/(1-sin(x))+1/(1+sin(x))', '2sec(x)^2'], ['= 2sec(x)^2', 'ANS: LHS = RHS']),
+    # sin^2(x) typed as a function power: norm -> (sin(x))^2, so 1 - sin^2 x = cos^2 x
+    ('trig_ident', ['2', '0', '1-sin^2(x)'], ['ANS: cos(x)^2', 'sin^2 x + cos^2 x = 1'], ['Error']),
+    ('trig_ident', ['3', '0', 'sin^2(x)+cos^2(x)', '1'], ['ANS: LHS = RHS'], ['Error']),
 ]

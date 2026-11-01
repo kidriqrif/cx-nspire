@@ -230,7 +230,9 @@ def discrete_rv():
             if o in q:
                 op = o
                 break
-        c = F(_q(q.split(op)[1]))
+        c = q.split(op)[1]
+        # infinite bound (query uppercased): +-1e300 so X<inf selects everything
+        c = 1e300 if c == 'INF' else -1e300 if c == '-INF' else F(_q(c))
         sel = []
         for j in range(n):
             w = F(xs[j])
@@ -507,9 +509,14 @@ def continuous_rv():
 
         def ok(d):
             for f, lo, hi in P:
+                # sampling window: finite stand-in for an infinite end
+                a = _fv(lo)
+                b = _fv(hi)
+                if a < -1e299:
+                    a = -10 if b > 1e299 else b - 10
+                if b > 1e299:
+                    b = 10 if a <= -10 else a + 10
                 for s in range(5):
-                    a = F(lo)
-                    b = _fv(hi) if hi != 'inf' else a + 10
                     w = F('subst(' + _sb(f, d) + ',x=' + repr(a + (b - a) * (s + 0.5) / 5) + ')')
                     if w is None or w < -1e-12:
                         return False
@@ -526,7 +533,8 @@ def continuous_rv():
     for p in P:
         out(_fl(p))
     if '2' in tk:
-        cd = [_e(z) for z in askv('P(c<X<d): c,d', '', 0)]
+        # keep inf / -inf bounds as typed
+        cd = [z.strip() if 'inf' in z else _e(z) for z in split_top(ask('P(c<X<d): c,d', '', 0).strip('()[] '), ',')]
         lb = 'P(' + _g(cd[0]) + '<X<' + _g(cd[1]) + ')'
         _A(lb, _di(P, 'F', cd[0], cd[1], lb + ' = '))
     E = V = ''
@@ -583,11 +591,23 @@ def _mode(P):
     best = None
     bv = -1e300
     tie = 0
+    iv = None  # interval on which f is constant and maximal
     for f, lo, hi in P:
         df = S('diff(' + f + ',x)')
         out("f'(x) = " + ps(df) + (' on [' + _g(lo) + ',' + _g(hi) + ']' if len(P) > 1 else ''))
         if df == '0':
-            tie = 1
+            # constant piece: compare its value with the best so far
+            fz = S('subst(' + f + ',x=' + (lo if lo != '-inf' else hi) + ')')
+            v = F(fz)
+            if v is not None and v > bv + 1e-12:
+                bv = v
+                best = lo
+                fb = fz
+                tie = 1
+                iv = (lo, hi)
+            elif v is not None and abs(v - bv) < 1e-12 and best is not None:
+                tie = 1
+                iv = (lo, hi)
             continue
         cs = [lo] + ([hi] if hi != 'inf' else [])
         for z in GL('solve(' + df + '=0,x)'):
@@ -607,7 +627,10 @@ def _mode(P):
                     best = z
                     fb = fz
                     tie = 0
-    if best is None or tie:
+                    iv = None
+    if iv and tie:
+        out('mode: any x in ' + _dm(iv[0], iv[1]) + ', f = ' + _g(fb))
+    elif best is None or tie:
         out('mode: not unique')
     else:
         out('max f(' + _g(best) + ') = ' + _g(fb))
